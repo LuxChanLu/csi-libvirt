@@ -80,5 +80,5 @@ func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix string) (
 			idx++
 		}
 	}
-	return c.Driver.EncodeNumberToAlphabet(int64(idx)), nil
+	return fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx))), nil
 }
