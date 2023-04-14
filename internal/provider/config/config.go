@@ -10,6 +10,13 @@ import (
 type Config struct {
 	DriverName string
 	Endpoint   string
+
+	Node *ConfigNode
+}
+
+type ConfigNode struct {
+	MachineIDFile string
+	Endpoint      string
 }
 
 const (
@@ -20,6 +27,9 @@ func ProvideConfig(logger *zap.Logger) *Config {
 	config := &Config{
 		DriverName: driverName,
 		Endpoint:   "/var/lib/kubelet/plugins/" + driverName + "/csi.sock",
+		Node: &ConfigNode{
+			MachineIDFile: "/etc/machine-id",
+		},
 	}
 	if err := env.Decode(os.Environ(), "CSI_", config); err != nil {
 		logger.Fatal("unable to parse config from args", zap.Error(err))

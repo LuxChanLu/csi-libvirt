@@ -14,7 +14,26 @@ type Controller struct {
 }
 
 func (c *Controller) ControllerGetCapabilities(context.Context, *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
-	return nil, nil
+	cap := func(cap csi.ControllerServiceCapability_RPC_Type) *csi.ControllerServiceCapability {
+		return &csi.ControllerServiceCapability{
+			Type: &csi.ControllerServiceCapability_Rpc{
+				Rpc: &csi.ControllerServiceCapability_RPC{
+					Type: cap,
+				},
+			},
+		}
+	}
+	return &csi.ControllerGetCapabilitiesResponse{
+		Capabilities: []*csi.ControllerServiceCapability{
+			cap(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME),
+			cap(csi.ControllerServiceCapability_RPC_PUBLISH_UNPUBLISH_VOLUME),
+			cap(csi.ControllerServiceCapability_RPC_LIST_VOLUMES),
+			cap(csi.ControllerServiceCapability_RPC_GET_CAPACITY),
+			cap(csi.ControllerServiceCapability_RPC_EXPAND_VOLUME),
+			cap(csi.ControllerServiceCapability_RPC_GET_VOLUME),
+			cap(csi.ControllerServiceCapability_RPC_LIST_VOLUMES_PUBLISHED_NODES),
+		},
+	}, nil
 }
 
 func (c *Controller) ControllerExpandVolume(context.Context, *csi.ControllerExpandVolumeRequest) (*csi.ControllerExpandVolumeResponse, error) {
