@@ -58,18 +58,18 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: csi-snapshotter
-          image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
-          args:
-            - "--csi-address=$(ADDRESS)"
-            - "--v=5"
-          env:
-            - name: ADDRESS
-              value: /var/lib/csi/sockets/pluginproxy/csi.sock
-          imagePullPolicy: IfNotPresent
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
+        # - name: csi-snapshotter
+        #   image: registry.k8s.io/sig-storage/csi-snapshotter:v6.2.1
+        #   args:
+        #     - "--csi-address=$(ADDRESS)"
+        #     - "--v=5"
+        #   env:
+        #     - name: ADDRESS
+        #       value: /var/lib/csi/sockets/pluginproxy/csi.sock
+        #   imagePullPolicy: IfNotPresent
+        #   volumeMounts:
+        #     - name: socket-dir
+        #       mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-resizer
           image: registry.k8s.io/sig-storage/csi-resizer:v1.7.0
           args:

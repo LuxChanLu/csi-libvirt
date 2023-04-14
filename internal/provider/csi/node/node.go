@@ -47,5 +47,6 @@ func (n *Node) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequ
 }
 
 func (n *Node) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
+	n.Logger.Info("NodeGetInfo called")
 	return &csi.NodeGetInfoResponse{NodeId: n.MachineID}, nil
 }
