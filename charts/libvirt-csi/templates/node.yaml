@@ -61,6 +61,8 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: /csi/csi.sock
+            - name: CSI_NODE_MACHINEIDFILE
+              value: {{ .Values.node.machineIdFile }}
           {{- with .Values.node.env }}
             {{- toYaml . | nindent 12 }}
           {{- end }}
@@ -71,6 +73,8 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
           volumeMounts:
+            - name: machine-id
+              mountPath: {{ .Values.node.machineIdFile }}
             - name: plugin-dir
               mountPath: /csi
             - name: pods-mount-dir
@@ -95,6 +99,9 @@ spec:
       nodeSelector:
         kubernetes.io/os: linux
       volumes:
+        - name: machine-id
+          hostPath:
+            path: {{ .Values.node.machineIdFile }}
         - name: registration-dir
           hostPath:
             path: /var/lib/kubelet/plugins_registry/
