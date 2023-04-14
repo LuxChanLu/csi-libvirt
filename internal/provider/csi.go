@@ -2,6 +2,7 @@ package provider
 
 import (
 	"io/ioutil"
+	"strings"
 
 	"github.com/LuxChanLu/libvirt-csi/internal/provider/config"
 	"github.com/LuxChanLu/libvirt-csi/internal/provider/csi/controller"
@@ -26,5 +27,6 @@ func ProvideCSINode(driver *driver.Driver, logger *zap.Logger, config *config.Co
 	if err != nil {
 		logger.Fatal("unable to read machine id file", zap.String("file", config.Node.MachineIDFile), zap.Error(err))
 	}
-	return &node.Node{Driver: driver, Logger: logger.With(zap.String("mode", "node"), zap.String("machine-id", string(machineIdData))), MachineID: string(machineIdData)}
+	machineId := strings.TrimSpace(string(machineIdData))
+	return &node.Node{Driver: driver, Logger: logger.With(zap.String("mode", "node"), zap.String("machine-id", machineId)), MachineID: machineId}
 }
