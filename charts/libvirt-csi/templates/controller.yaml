@@ -85,6 +85,8 @@ spec:
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: libvirt-csi-plugin
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - "controller"
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
