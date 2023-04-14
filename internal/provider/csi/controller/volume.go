@@ -7,6 +7,7 @@ import (
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
+	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -33,8 +34,9 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 
 	pool, err := c.Libvirt.StoragePool(request.Parameters["pool"])
 	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("storage pool not found: %s, %s", request.Parameters["pool"], err.Error()))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", request.Parameters["pool"], err.Error()))
 	}
+	c.Logger.Info("gonna create a storage volume", zap.String("pool", pool.Name))
 
 	var vol libvirt.StorageVol
 
@@ -48,13 +50,16 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 		if err != nil {
 			return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to create volume: %s", err.Error()))
 		}
+		c.Logger.Info("volume has been created", zap.String("pool", vol.Pool), zap.String("name", vol.Name), zap.String("key", vol.Key))
+	} else {
+		c.Logger.Info("volume already existing skip creation", zap.String("pool", vol.Pool), zap.String("name", vol.Name), zap.String("key", vol.Key))
 	}
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      vol.Key,
+			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key),
 			CapacityBytes: request.CapacityRange.RequiredBytes,
-			VolumeContext: map[string]string{"pool": vol.Pool},
+			VolumeContext: map[string]string{c.Driver.Name + "/pool": vol.Pool},
 		},
 	}, nil
 }
@@ -64,13 +69,18 @@ func (c *Controller) DeleteVolume(ctx context.Context, request *csi.DeleteVolume
 		return nil, status.Error(codes.InvalidArgument, "DeleteVolume Volume ID must be provided")
 	}
 
-	// pool, err := c.Libvirt.StoragePool(request.Parameters["pool"])
-	// if err != nil {
-	// 	return nil, status.Error(codes.NotFound, fmt.Sprintf("storage pool not found: %s, %s", request.Parameters["pool"], err.Error()))
-	// }
+	poolName, name, key := extratVolId(request.VolumeId)
+	c.Logger.Info("gonna destroy volume", zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 
-	// vol, err = c.Libvirt.StorageVolLookupByKey(pool, request.VolumeId)
-	// c.Libvirt.StorageVolDelete()
+	vol, err := c.Libvirt.StorageVolLookupByKey(key)
+	if err != nil {
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get storage volume: %s, %s", key, err.Error()))
+	}
+
+	if err := c.Libvirt.StorageVolDelete(vol, libvirt.StorageVolDeleteNormal); err != nil {
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to delete storage volume: %s, %s", key, err.Error()))
+	}
+
 	return &csi.DeleteVolumeResponse{}, nil
 }
 
@@ -80,7 +90,6 @@ func validateCapabilities(caps []*csi.VolumeCapability) []string {
 		if cap.GetAccessMode().GetMode() != supportedAccessMode.GetMode() {
 			violations.Insert(fmt.Sprintf("unsupported access mode %s", cap.GetAccessMode().GetMode().String()))
 		}
-
 		accessType := cap.GetAccessType()
 		switch accessType.(type) {
 		case *csi.VolumeCapability_Block:
@@ -89,6 +98,14 @@ func validateCapabilities(caps []*csi.VolumeCapability) []string {
 			violations.Insert("unsupported access type")
 		}
 	}
-
 	return violations.List()
+}
+
+func buildVolId(pool, name, key string) string {
+	return strings.Join([]string{pool, name, key}, ":")
+}
+
+func extratVolId(volId string) (pool, name, key string) {
+	ids := strings.Split(volId, ":")
+	return ids[0], ids[1], ids[2]
 }

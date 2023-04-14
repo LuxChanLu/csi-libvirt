@@ -6,11 +6,13 @@ import (
 	"github.com/LuxChanLu/libvirt-csi/internal/provider/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
+	"go.uber.org/zap"
 )
 
 type Controller struct {
 	Driver  *driver.Driver
 	Libvirt *libvirt.Libvirt
+	Logger  *zap.Logger
 }
 
 func (c *Controller) ControllerGetCapabilities(context.Context, *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {

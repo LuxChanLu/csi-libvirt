@@ -10,6 +10,7 @@ metadata:
 provisioner: lu.lxc.csi.libvirt
 parameters:
   fstype: xfs
+  pool: pool
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 ```

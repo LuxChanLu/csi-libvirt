@@ -17,8 +17,8 @@ func ProvideCSIIdentity(driver *driver.Driver) csi.IdentityServer {
 	return &identity.Identity{Driver: driver}
 }
 
-func ProvideCSIController(driver *driver.Driver, libvirt *libvirt.Libvirt) csi.ControllerServer {
-	return &controller.Controller{Driver: driver, Libvirt: libvirt}
+func ProvideCSIController(driver *driver.Driver, logger *zap.Logger, libvirt *libvirt.Libvirt) csi.ControllerServer {
+	return &controller.Controller{Driver: driver, Logger: logger.With(zap.String("mode", "controller")), Libvirt: libvirt}
 }
 
 func ProvideCSINode(driver *driver.Driver, logger *zap.Logger, config *config.Config) csi.NodeServer {
