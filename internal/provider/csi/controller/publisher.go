@@ -24,10 +24,23 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
+	dev := ""
+	bus := request.VolumeContext[c.Driver.Name+"/bus"]
+	switch bus {
+	case "virtio":
+		dev = "vda"
+	case "usb":
+	case "scsi":
+	case "sata":
+		dev = "sda"
+	case "ide":
+		dev = "hda"
+	default:
+		return nil, status.Error(codes.Unavailable, fmt.Sprintf("unavailable bus type: %s", bus))
+	}
 	if err := c.Libvirt.DomainAttachDevice(domain, c.Driver.Template("disk.xml.tpl", map[string]interface{}{
-		"Alias":  name,
-		"Source": key,
-		"Bus":    request.VolumeContext[c.Driver.Name+"/bus"],
+		"Alias": name, "Source": key,
+		"Bus": bus, "Dev": dev,
 	})); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to attach disk to domain: %s", err.Error()))
 	}

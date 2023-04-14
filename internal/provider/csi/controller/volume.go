@@ -32,7 +32,7 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
 
-	pool, err := c.Libvirt.StoragePool(request.Parameters["pool"])
+	pool, err := c.Libvirt.StoragePoolLookupByName(request.Parameters["pool"])
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", request.Parameters["pool"], err.Error()))
 	}
