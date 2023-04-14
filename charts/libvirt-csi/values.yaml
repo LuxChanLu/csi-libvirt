@@ -15,6 +15,7 @@ controller:
   affinity: {}
   volumes: []
   volumeMounts: []
+  env: []
 
 node:
   podAnnotations: {}
@@ -22,3 +23,4 @@ node:
   nodeSelector: {}
   tolerations: []
   affinity: {}
+  env: []

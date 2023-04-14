@@ -59,6 +59,9 @@ spec:
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
+          {{- with .Values.node.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           imagePullPolicy: "IfNotPresent"
           securityContext:
             privileged: true
