@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
@@ -24,23 +25,20 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
-	dev := ""
 	bus := request.VolumeContext[c.Driver.Name+"/bus"]
-	switch bus {
-	case "virtio":
-		dev = "vda"
-	case "usb":
-	case "scsi":
-	case "sata":
-		dev = "sda"
-	case "ide":
-		dev = "hda"
-	default:
-		return nil, status.Error(codes.Unavailable, fmt.Sprintf("unavailable bus type: %s", bus))
+	dev := map[string]string{
+		"virtio": "vd",
+		"usb":    "sd", "scsi": "sd", "sata": "sd",
+		"ide": "hd",
+	}[bus]
+	dev, err = c.genDiskTargetSuffix(domain, dev)
+	if err != nil {
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to generate disk target: %s", err.Error()))
 	}
 	if err := c.Libvirt.DomainAttachDevice(domain, c.Driver.Template("disk.xml.tpl", map[string]interface{}{
 		"Alias": name, "Source": key,
 		"Bus": bus, "Dev": dev,
+		"Serial": name,
 	})); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to attach disk to domain: %s", err.Error()))
 	}
@@ -65,4 +63,22 @@ func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi
 	}
 	c.Logger.Info("volume dettached from domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name))
 	return nil, nil
+}
+
+func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix string) (string, error) {
+	xml, err := c.Libvirt.DomainGetXMLDesc(domain, 0)
+	if err != nil {
+		return "", err
+	}
+	disks, err := c.Driver.LookupDomainDisks(xml)
+	if err != nil {
+		return "", err
+	}
+	idx := 0
+	for _, disk := range disks {
+		if strings.HasPrefix(disk.Target.Dev, prefix) {
+			idx++
+		}
+	}
+	return c.Driver.EncodeNumberToAlphabet(int64(idx)), nil
 }
