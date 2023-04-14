@@ -11,6 +11,7 @@ provisioner: lu.lxc.csi.libvirt
 parameters:
   fstype: xfs
   pool: pool
+  bus: virtio # virtio/usb/sata/ide
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 ```

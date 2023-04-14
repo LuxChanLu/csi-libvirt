@@ -59,7 +59,10 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 		Volume: &csi.Volume{
 			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key),
 			CapacityBytes: request.CapacityRange.RequiredBytes,
-			VolumeContext: map[string]string{c.Driver.Name + "/pool": vol.Pool},
+			VolumeContext: map[string]string{
+				c.Driver.Name + "/pool": vol.Pool,
+				c.Driver.Name + "/bus":  request.Parameters["bus"],
+			},
 		},
 	}, nil
 }
