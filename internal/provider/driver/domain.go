@@ -8,7 +8,10 @@ type Disk struct {
 	XMLName xml.Name `xml:"disk"`
 	Type    string   `xml:"type,attr"`
 	Device  string   `xml:"device,attr"`
-	Driver  struct {
+	Alias   struct {
+		Name string `xml:"name,attr"`
+	} `xml:"alias"`
+	Driver struct {
 		Name string `xml:"name,attr"`
 		Type string `xml:"type,attr"`
 	} `xml:"driver"`
@@ -19,6 +22,7 @@ type Disk struct {
 		Dev string `xml:"dev,attr"`
 		Bus string `xml:"bus,attr"`
 	} `xml:"target"`
+	Serial string `xml:"serial"`
 }
 
 type Domain struct {

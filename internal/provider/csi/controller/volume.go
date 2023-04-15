@@ -69,7 +69,7 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key),
+			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key, serial),
 			CapacityBytes: request.CapacityRange.RequiredBytes,
 			VolumeContext: map[string]string{
 				c.Driver.Name + "/pool":   vol.Pool,
@@ -86,7 +86,7 @@ func (c *Controller) DeleteVolume(ctx context.Context, request *csi.DeleteVolume
 		return nil, status.Error(codes.InvalidArgument, "DeleteVolume Volume ID must be provided")
 	}
 
-	poolName, name, key := extratVolId(request.VolumeId)
+	poolName, name, key, _ := extratVolId(request.VolumeId)
 	c.Logger.Info("gonna destroy volume", zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 
 	vol, err := c.Libvirt.StorageVolLookupByKey(key)
@@ -118,11 +118,11 @@ func validateCapabilities(caps []*csi.VolumeCapability) []string {
 	return violations.List()
 }
 
-func buildVolId(pool, name, key string) string {
-	return strings.Join([]string{pool, name, key}, ":")
+func buildVolId(pool, name, key, serial string) string {
+	return strings.Join([]string{pool, name, key, serial}, ":")
 }
 
-func extratVolId(volId string) (pool, name, key string) {
+func extratVolId(volId string) (pool, name, key, serial string) {
 	ids := strings.Split(volId, ":")
-	return ids[0], ids[1], ids[2]
+	return ids[0], ids[1], ids[2], ids[3]
 }
