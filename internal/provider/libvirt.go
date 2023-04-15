@@ -13,11 +13,11 @@ func ProvideLibvirt(lc fx.Lifecycle, log *zap.Logger) *libvirt.Libvirt {
 		if err := virt.Connect(); err != nil {
 			return err
 		}
-		version, err := virt.Version()
+		version, err := virt.ConnectGetLibVersion()
 		if err != nil {
 			return err
 		}
-		log.Info("libvirt connected", zap.String("version", version))
+		log.Info("libvirt connected", zap.Uint64("version", version))
 		return nil
 	}, virt.Disconnect))
 	return virt

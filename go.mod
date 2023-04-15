@@ -11,6 +11,7 @@ require (
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.28.1
 	k8s.io/apimachinery v0.27.0
+	k8s.io/utils v0.0.0-20230209194617-a36077c30491
 )
 
 require (
@@ -18,6 +19,7 @@ require (
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
@@ -35,4 +37,5 @@ require (
 	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
+	k8s.io/klog/v2 v2.90.1 // indirect
 )

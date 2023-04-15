@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
+	"hash/crc32"
+	"strconv"
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -31,10 +33,13 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	if violations := validateCapabilities(request.VolumeCapabilities); len(violations) > 0 {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
+	poolName := request.Parameters["pool"]
+	bus := request.Parameters["bus"]
+	fstype := request.Parameters["fstype"]
 
-	pool, err := c.Libvirt.StoragePoolLookupByName(request.Parameters["pool"])
+	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", request.Parameters["pool"], err.Error()))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", poolName, err.Error()))
 	}
 	c.Logger.Info("gonna create a storage volume", zap.String("pool", pool.Name))
 
@@ -55,13 +60,22 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 		c.Logger.Info("volume already existing skip creation", zap.String("pool", vol.Pool), zap.String("name", vol.Name), zap.String("key", vol.Key))
 	}
 
+	var serial = request.Name
+	// TODO: Not the optimal, but some bus shrink the disk serial
+	switch bus {
+	case "virtio":
+		serial = strconv.FormatInt(int64(crc32.ChecksumIEEE([]byte(serial))), 16)
+	}
+
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key),
 			CapacityBytes: request.CapacityRange.RequiredBytes,
 			VolumeContext: map[string]string{
-				c.Driver.Name + "/pool": vol.Pool,
-				c.Driver.Name + "/bus":  request.Parameters["bus"],
+				c.Driver.Name + "/pool":   vol.Pool,
+				c.Driver.Name + "/bus":    bus,
+				c.Driver.Name + "/serial": serial,
+				c.Driver.Name + "/fstype": fstype,
 			},
 		},
 	}, nil

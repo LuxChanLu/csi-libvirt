@@ -26,24 +26,29 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
 	bus := request.VolumeContext[c.Driver.Name+"/bus"]
-	dev := map[string]string{
+	serial := request.VolumeContext[c.Driver.Name+"/serial"]
+	devPrefix := map[string]string{
 		"virtio": "vd",
 		"usb":    "sd", "scsi": "sd", "sata": "sd",
 		"ide": "hd",
 	}[bus]
-	dev, err = c.genDiskTargetSuffix(domain, dev)
+	dev, alreadyMounted, err := c.genDiskTargetSuffix(domain, devPrefix, key)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to generate disk target: %s", err.Error()))
+	}
+	if alreadyMounted {
+		c.Logger.Info("volume already attached to domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name), zap.String("serial", serial), zap.String("bus", bus), zap.String("dev", dev))
+		return &csi.ControllerPublishVolumeResponse{PublishContext: map[string]string{c.Driver.Name + "/serial": serial, c.Driver.Name + "/dev": dev}}, nil
 	}
 	if err := c.Libvirt.DomainAttachDevice(domain, c.Driver.Template("disk.xml.tpl", map[string]interface{}{
 		"Alias": name, "Source": key,
 		"Bus": bus, "Dev": dev,
-		"Serial": name,
+		"Serial": serial,
 	})); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to attach disk to domain: %s", err.Error()))
 	}
-	c.Logger.Info("volume attached to domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name))
-	return nil, nil
+	c.Logger.Info("volume attached to domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name), zap.String("serial", serial), zap.String("bus", bus), zap.String("dev", dev))
+	return &csi.ControllerPublishVolumeResponse{PublishContext: map[string]string{c.Driver.Name + "/serial": serial, c.Driver.Name + "/dev": dev}}, nil
 }
 
 func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi.ControllerUnpublishVolumeRequest) (*csi.ControllerUnpublishVolumeResponse, error) {
@@ -59,26 +64,29 @@ func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
 	if err := c.Libvirt.DomainDetachDeviceAlias(domain, name, 0); err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to attach disk to domain: %s", err.Error()))
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to dettached disk to domain: %s", err.Error()))
 	}
 	c.Logger.Info("volume dettached from domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name))
-	return nil, nil
+	return &csi.ControllerUnpublishVolumeResponse{}, nil
 }
 
-func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix string) (string, error) {
+func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix, source string) (string, bool, error) {
 	xml, err := c.Libvirt.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	disks, err := c.Driver.LookupDomainDisks(xml)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	idx := 0
 	for _, disk := range disks {
+		if strings.EqualFold(disk.Source.File, source) {
+			return disk.Target.Dev, true, nil
+		}
 		if strings.HasPrefix(disk.Target.Dev, prefix) {
 			idx++
 		}
 	}
-	return fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx))), nil
+	return fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx))), false, nil
 }

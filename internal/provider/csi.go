@@ -1,7 +1,7 @@
 package provider
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/LuxChanLu/libvirt-csi/internal/provider/config"
@@ -12,6 +12,8 @@ import (
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
+	"k8s.io/utils/exec"
+	"k8s.io/utils/mount"
 )
 
 func ProvideCSIIdentity(driver *driver.Driver) csi.IdentityServer {
@@ -23,10 +25,15 @@ func ProvideCSIController(driver *driver.Driver, logger *zap.Logger, libvirt *li
 }
 
 func ProvideCSINode(driver *driver.Driver, logger *zap.Logger, config *config.Config) csi.NodeServer {
-	machineIdData, err := ioutil.ReadFile(config.Node.MachineIDFile)
+	machineIdData, err := os.ReadFile(config.Node.MachineIDFile)
 	if err != nil {
 		logger.Fatal("unable to read machine id file", zap.String("file", config.Node.MachineIDFile), zap.Error(err))
 	}
 	machineId := strings.TrimSpace(string(machineIdData))
-	return &node.Node{Driver: driver, Logger: logger.With(zap.String("mode", "node"), zap.String("machine-id", machineId)), MachineID: machineId}
+	return &node.Node{
+		Driver: driver, Logger: logger.With(zap.String("mode", "node"), zap.String("machine-id", machineId)),
+		MachineID: machineId,
+		Formatter: &mount.SafeFormatAndMount{Interface: mount.New(""), Exec: exec.New()},
+		Mounter:   mount.New(""),
+	}
 }
