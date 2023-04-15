@@ -82,7 +82,7 @@ func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix, source s
 	if err != nil {
 		return "", false, err
 	}
-	idx := 0
+	idx := 1
 	for _, disk := range disks {
 		if strings.EqualFold(disk.Source.File, source) {
 			return disk.Target.Dev, true, nil
