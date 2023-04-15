@@ -4,8 +4,8 @@ image:
   tag: ""
 
 imagePullSecrets: []
-nameOverride: ""
 fullnameOverride: ""
+nameOverride: ""
 
 controller:
   podAnnotations: {}
