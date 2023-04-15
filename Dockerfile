@@ -11,7 +11,9 @@ COPY ./ ./
 
 RUN go build $BUILD_FLAGS -o ./csi cmd/main.go
 
-FROM scratch
+FROM alpine:3.17
+
+RUN apk add --no-cache e2fsprogs exfatprogs btrfs-progs blkid xfsprogs ntfs-3g-progs hfsprogs mount umount util-linux-misc blkid
 
 USER csi:csi
 
