@@ -1,6 +1,9 @@
 package driver
 
-import "strings"
+import (
+	"math"
+	"strings"
+)
 
 func (d *Driver) EncodeNumberToAlphabet(number int64) string {
 	alphabet := "abcdefghijklmnopqrstuvwxyz"
@@ -10,7 +13,7 @@ func (d *Driver) EncodeNumberToAlphabet(number int64) string {
 	for number > 0 {
 		remainder := number % base
 		number = number / base
-		encoded.WriteByte(alphabet[remainder])
+		encoded.WriteByte(alphabet[int64(math.Max(float64(remainder-1), 0))])
 	}
 
 	encodedStr := encoded.String()

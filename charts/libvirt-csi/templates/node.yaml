@@ -69,6 +69,7 @@ spec:
           imagePullPolicy: "IfNotPresent"
           securityContext:
             privileged: true
+            runAsUser: 0
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
