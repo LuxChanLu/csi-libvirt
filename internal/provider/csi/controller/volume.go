@@ -89,7 +89,12 @@ func (c *Controller) DeleteVolume(ctx context.Context, request *csi.DeleteVolume
 	poolName, name, key, _ := extratVolId(request.VolumeId)
 	c.Logger.Info("gonna destroy volume", zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 
-	vol, err := c.Libvirt.StorageVolLookupByKey(key)
+	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", poolName, err.Error()))
+	}
+
+	vol, err := c.Libvirt.StorageVolLookupByName(pool, name)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get storage volume: %s, %s", key, err.Error()))
 	}
