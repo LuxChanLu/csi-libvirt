@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   libvirt-csi:
   - apiVersion: v2
+    appVersion: v0.0.21
+    created: "2023-04-15T13:35:20.142181584Z"
+    description: LibVirt CSI Driver
+    digest: b1b97a0228ae19fff0b0794d989dc36f9f2136579719ba3246cc41a6ae39bc42
+    name: libvirt-csi
+    type: application
+    urls:
+    - https://github.com/LuxChanLu/libvirt-csi/releases/download/libvirt-csi-0.1.19/libvirt-csi-0.1.19.tgz
+    version: 0.1.19
+  - apiVersion: v2
     appVersion: v0.0.20
     created: "2023-04-15T13:29:25.248041399Z"
     description: LibVirt CSI Driver
@@ -181,4 +191,4 @@ entries:
     urls:
     - https://github.com/LuxChanLu/libvirt-csi/releases/download/libvirt-csi-0.1.0/libvirt-csi-0.1.0.tgz
     version: 0.1.0
-generated: "2023-04-15T13:29:25.248284099Z"
+generated: "2023-04-15T13:35:20.142333883Z"
