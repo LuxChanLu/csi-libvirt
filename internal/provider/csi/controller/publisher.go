@@ -82,16 +82,25 @@ func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix, source s
 	if err != nil {
 		return "", false, err
 	}
-	idx := 1
 	for _, disk := range disks {
 		if strings.EqualFold(disk.Source.File, source) {
 			return disk.Target.Dev, true, nil
 		}
-		if strings.HasPrefix(disk.Target.Dev, prefix) {
-			idx++
-		}
 	}
-	return fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx))), false, nil
+	idx := 1
+	dev := ""
+	for {
+		dev = fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx)))
+		for _, disk := range disks {
+			if strings.EqualFold(disk.Target.Dev, dev) {
+				dev = ""
+			}
+		}
+		if dev != "" {
+			return dev, false, nil
+		}
+		idx++
+	}
 }
 
 func (c *Controller) getDiskAlias(domain libvirt.Domain, serial string) (string, error) {
