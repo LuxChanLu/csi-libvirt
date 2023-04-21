@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/shirou/gopsutil/v3/disk"
@@ -29,9 +30,14 @@ func (n *Node) NodeStageVolume(ctx context.Context, request *csi.NodeStageVolume
 			n.Logger.Warn("unable to read disk serial", zap.Error(err))
 			continue
 		}
-		if diskSerial == serial {
+		n.Logger.Info("try matching disk serial", zap.String("disk-path", diskById), zap.String("disk-serial", diskSerial), zap.String("serial", serial))
+		if strings.HasPrefix(diskSerial, serial) {
 			foundDisk = diskById
 		}
+	}
+	if foundDisk == "" {
+		n.Logger.Info("disk not found", zap.String("serial", serial))
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to find attached disk: %s", serial))
 	}
 	n.Logger.Info("source disk is", zap.String("disk", foundDisk))
 	if err := n.Formatter.FormatAndMount(foundDisk, request.StagingTargetPath, fstype, []string{"rw"}); err != nil {
