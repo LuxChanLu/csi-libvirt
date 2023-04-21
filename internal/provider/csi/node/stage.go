@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/shirou/gopsutil/v3/disk"
 	"go.uber.org/zap"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -17,12 +18,23 @@ func (n *Node) NodeStageVolume(ctx context.Context, request *csi.NodeStageVolume
 	dev := request.PublishContext[n.Driver.Name+"/dev"]
 	fstype := request.VolumeContext[n.Driver.Name+"/fstype"]
 	n.Logger.Info("gonna format/mount (if necessary)", zap.String("serial", serial), zap.String("dev", dev), zap.String("fstype", fstype))
-	disks, err := filepath.Glob("/dev/disk/by-id/*" + serial)
-	if err != nil || len(disks) != 1 {
+	diskByIds, err := filepath.Glob("/dev/disk/by-id/*")
+	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to find attached disk: %s", err.Error()))
 	}
-	n.Logger.Info("source disk is", zap.String("disk", disks[0]))
-	if err := n.Formatter.FormatAndMount(disks[0], request.StagingTargetPath, fstype, []string{"rw"}); err != nil {
+	var foundDisk string
+	for _, diskById := range diskByIds {
+		diskSerial, err := disk.SerialNumberWithContext(ctx, diskById)
+		if err != nil {
+			n.Logger.Warn("unable to read disk serial", zap.Error(err))
+			continue
+		}
+		if diskSerial == serial {
+			foundDisk = diskById
+		}
+	}
+	n.Logger.Info("source disk is", zap.String("disk", foundDisk))
+	if err := n.Formatter.FormatAndMount(foundDisk, request.StagingTargetPath, fstype, []string{"rw"}); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to format/mount attached disk: %s", err.Error()))
 	}
 	return &csi.NodeStageVolumeResponse{}, nil
