@@ -31,7 +31,7 @@ func (n *Node) NodeStageVolume(ctx context.Context, request *csi.NodeStageVolume
 			continue
 		}
 		n.Logger.Info("try matching disk serial", zap.String("disk-path", diskById), zap.String("disk-serial", diskSerial), zap.String("serial", serial))
-		if strings.HasPrefix(diskSerial, serial) {
+		if strings.HasSuffix(diskSerial, serial) {
 			foundDisk = diskById
 		}
 	}
