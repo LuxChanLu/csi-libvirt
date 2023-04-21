@@ -83,6 +83,8 @@ spec:
               mountPropagation: "Bidirectional"
             - name: device-dir
               mountPath: /dev
+            - name: udev-dir
+              mountPath: /run/udev/data/
           resources:
             {{- toYaml .Values.node.resources | nindent 12 }}
       {{- with .Values.node.nodeSelector }}
