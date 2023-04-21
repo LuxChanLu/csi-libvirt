@@ -83,8 +83,8 @@ spec:
               mountPropagation: "Bidirectional"
             - name: device-dir
               mountPath: /dev
-            - name: udev-dir
-              mountPath: /run/udev/data/
+            - name: udev-data-dir
+              mountPath: /run/udev/data
           resources:
             {{- toYaml .Values.node.resources | nindent 12 }}
       {{- with .Values.node.nodeSelector }}
@@ -120,6 +120,9 @@ spec:
         - name: device-dir
           hostPath:
             path: /dev
+        - name: udev-data-dir
+          hostPath:
+            path: /run/udev/data
 ---
 apiVersion: v1
 kind: ServiceAccount
