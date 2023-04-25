@@ -1,5 +1,5 @@
 image:
-  repository: luxchan/libvirt-csi
+  repository: luxchan/csi-libvirt
   pullPolicy: IfNotPresent
   tag: ""
 

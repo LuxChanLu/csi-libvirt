@@ -1,40 +1,22 @@
 package main
 
 import (
-	"github.com/LuxChanLu/libvirt-csi/internal"
-	"github.com/LuxChanLu/libvirt-csi/internal/provider"
-	"github.com/LuxChanLu/libvirt-csi/internal/provider/config"
-	"github.com/LuxChanLu/libvirt-csi/internal/provider/driver"
+	"github.com/LuxChanLu/csi-libvirt/internal/options"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"github.com/traefik/paerser/cli"
 	"go.uber.org/fx"
-	"go.uber.org/fx/fxevent"
-	"go.uber.org/zap"
 )
 
 func main() {
-	options := []fx.Option{
-		fx.Provide(provider.ProvideLogger),
-		fx.Provide(provider.ProvideLibvirt),
-		fx.Provide(config.ProvideConfig),
-		fx.Provide(driver.ProvideDriver),
-		fx.Provide(provider.ProvideGRPCServer),
-		fx.Provide(provider.ProvideCSIIdentity),
-		fx.Provide(provider.ProvideCSIController),
-		fx.Provide(provider.ProvideCSINode),
-		fx.WithLogger(func(logger *zap.Logger) fxevent.Logger {
-			logger.With(zap.String("buildTime", internal.BuildTime), zap.String("buildCommit", internal.BuildCommit), zap.String("buildVersion", internal.BuildVersion)).Info("init driver")
-			return &fxevent.ZapLogger{Logger: logger}
-		}),
-	}
 	cmd := &cli.Command{
-		Name:        "libvirt-csi",
+		Name:        "csi-libvirt",
 		Description: "LibVirt CSI",
 	}
 	err := cmd.AddCommand(&cli.Command{
 		Name:        "controller",
 		Description: "Controller Server",
 		Run: func(s []string) error {
-			fx.New(append(options, fx.Invoke(driver.StartController))...).Run()
+			fx.New(options.AppOptions(fx.Invoke(driver.RegisterController))...).Run()
 			return nil
 		},
 	})
@@ -45,7 +27,7 @@ func main() {
 		Name:        "node",
 		Description: "Node Server",
 		Run: func(s []string) error {
-			fx.New(append(options, fx.Invoke(driver.StartNode))...).Run()
+			fx.New(options.AppOptions(fx.Invoke(driver.RegisterNode))...).Run()
 			return nil
 		},
 	})

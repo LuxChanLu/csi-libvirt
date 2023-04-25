@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	DriverName string
-	Endpoint   string
+	DriverName   string
+	Endpoint     string
+	QEMUEndpoint string
 
 	Node *ConfigNode
 }
@@ -25,14 +26,15 @@ const (
 
 func ProvideConfig(logger *zap.Logger) *Config {
 	config := &Config{
-		DriverName: driverName,
-		Endpoint:   "/var/lib/kubelet/plugins/" + driverName + "/csi.sock",
+		DriverName:   driverName,
+		Endpoint:     "/var/lib/kubelet/plugins/" + driverName + "/csi.sock",
+		QEMUEndpoint: "/var/run/libvirt/libvirt-sock",
 		Node: &ConfigNode{
 			MachineIDFile: "/etc/machine-id",
 		},
 	}
 	if err := env.Decode(os.Environ(), "CSI_", config); err != nil {
-		logger.Fatal("unable to parse config from args", zap.Error(err))
+		logger.Fatal("unable to parse config from env", zap.Error(err))
 	}
 	logger.Info("config loaded", zap.String("driverName", config.DriverName))
 	return config

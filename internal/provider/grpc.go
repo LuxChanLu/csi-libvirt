@@ -3,7 +3,7 @@ package provider
 import (
 	"net"
 
-	"github.com/LuxChanLu/libvirt-csi/internal/provider/driver"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"

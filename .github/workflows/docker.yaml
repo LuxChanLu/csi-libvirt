@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: luxchanlu/libvirt-csi
+  IMAGE_NAME: luxchanlu/csi-libvirt
 
 jobs:
   hub:
@@ -24,7 +24,7 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: luxchan/libvirt-csi:${{ github.ref_name }}
+          tags: luxchan/csi-libvirt:${{ github.ref_name }}
 
   github-registry:
     runs-on: ubuntu-latest

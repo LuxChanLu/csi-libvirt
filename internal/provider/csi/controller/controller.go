@@ -3,7 +3,7 @@ package controller
 import (
 	"context"
 
-	"github.com/LuxChanLu/libvirt-csi/internal/provider/driver"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"

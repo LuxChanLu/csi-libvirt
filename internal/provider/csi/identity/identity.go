@@ -3,7 +3,7 @@ package identity
 import (
 	"context"
 
-	"github.com/LuxChanLu/libvirt-csi/internal/provider/driver"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )

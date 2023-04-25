@@ -1,27 +1,27 @@
 kind: StatefulSet
 apiVersion: apps/v1
 metadata:
-  name: {{ include "libvirt-csi.fullname" . }}-controller
+  name: {{ include "csi-libvirt.fullname" . }}-controller
   labels:
-    {{- include "libvirt-csi.labels" . | nindent 4 }}
+    {{- include "csi-libvirt.labels" . | nindent 4 }}
     tier: controller
   namespace: kube-system
 spec:
-  serviceName: "libvirt-csi"
+  serviceName: "csi-libvirt"
   selector:
     matchLabels:
-      {{- include "libvirt-csi.selectorLabels" . | nindent 6 }}
+      {{- include "csi-libvirt.selectorLabels" . | nindent 6 }}
       tier: controller
   replicas: 1
   template:
     metadata:
       annotations:
-        kubectl.kubernetes.io/default-container: libvirt-csi-plugin
+        kubectl.kubernetes.io/default-container: csi-libvirt-plugin
         {{- with .Values.controller.podAnnotations }}
           {{- toYaml . | nindent 8 }}
         {{- end }}
       labels:
-        {{- include "libvirt-csi.selectorLabels" . | nindent 8 }}
+        {{- include "csi-libvirt.selectorLabels" . | nindent 8 }}
         tier: controller
     spec:
       {{- with .Values.imagePullSecrets }}
@@ -29,7 +29,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       priorityClassName: system-cluster-critical
-      serviceAccount: libvirt-csi-controller-sa
+      serviceAccount: csi-libvirt-controller-sa
       containers:
         - name: csi-provisioner
           image: registry.k8s.io/sig-storage/csi-provisioner:v3.4.0
@@ -83,7 +83,7 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
-        - name: libvirt-csi-plugin
+        - name: csi-libvirt-plugin
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           args:
             - "controller"
@@ -127,13 +127,13 @@ spec:
 kind: ServiceAccount
 apiVersion: v1
 metadata:
-  name: libvirt-csi-controller-sa
+  name: csi-libvirt-controller-sa
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: libvirt-csi-provisioner-role
+  name: csi-libvirt-provisioner-role
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]
@@ -169,12 +169,12 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: libvirt-csi-provisioner-binding
+  name: csi-libvirt-provisioner-binding
 subjects:
   - kind: ServiceAccount
-    name: libvirt-csi-controller-sa
+    name: csi-libvirt-controller-sa
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: libvirt-csi-provisioner-role
+  name: csi-libvirt-provisioner-role
   apiGroup: rbac.authorization.k8s.io
