@@ -36,6 +36,8 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	poolName := request.Parameters["pool"]
 	bus := request.Parameters["bus"]
 	fstype := request.Parameters["fstype"]
+	unlock := c.Driver.DiskLock(poolName, request.Name)
+	defer unlock()
 
 	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
 	if err != nil {
@@ -51,7 +53,7 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 			"Name":       request.Name,
 			"Allocation": request.CapacityRange.LimitBytes,
 			"Capacity":   request.CapacityRange.RequiredBytes,
-		}), libvirt.StorageVolCreatePreallocMetadata)
+		}), 0)
 		if err != nil {
 			return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to create volume: %s", err.Error()))
 		}
@@ -66,11 +68,15 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	case "virtio":
 		serial = strconv.FormatInt(int64(crc32.ChecksumIEEE([]byte(serial))), 16)
 	}
+	_, volCapacity, _, err := c.Libvirt.StorageVolGetInfo(vol)
+	if err != nil {
+		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get volume information: %s", err.Error()))
+	}
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key, serial),
-			CapacityBytes: request.CapacityRange.RequiredBytes,
+			CapacityBytes: int64(volCapacity),
 			VolumeContext: map[string]string{
 				c.Driver.Name + "/pool":   vol.Pool,
 				c.Driver.Name + "/bus":    bus,
@@ -88,6 +94,8 @@ func (c *Controller) DeleteVolume(ctx context.Context, request *csi.DeleteVolume
 
 	poolName, name, key, _ := extratVolId(request.VolumeId)
 	c.Logger.Info("gonna destroy volume", zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
+	unlock := c.Driver.DiskLock(poolName, name)
+	defer unlock()
 
 	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
 	if err != nil {

@@ -51,3 +51,4 @@ jobs:
         with:
           parallel-finished: true
           carryforward: ${{ join(github.job.needs, ',') }}
+      - uses: creekorful/goreportcard-action@v1.0

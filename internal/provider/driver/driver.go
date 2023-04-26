@@ -2,6 +2,7 @@ package driver
 
 import (
 	"embed"
+	"sync"
 	"text/template"
 
 	"github.com/LuxChanLu/csi-libvirt/internal"
@@ -19,8 +20,9 @@ type Driver struct {
 	Version  string
 	Endpoint string
 
-	tpl    *template.Template
-	logger *zap.Logger
+	tpl       *template.Template
+	logger    *zap.Logger
+	diskLocks *sync.Map
 }
 
 func ProvideDriver(config *config.Config, log *zap.Logger) *Driver {
@@ -33,8 +35,9 @@ func ProvideDriver(config *config.Config, log *zap.Logger) *Driver {
 		Version:  internal.BuildVersion,
 		Endpoint: config.Endpoint,
 
-		tpl:    tpl,
-		logger: log,
+		tpl:       tpl,
+		logger:    log,
+		diskLocks: &sync.Map{},
 	}
 }
 
