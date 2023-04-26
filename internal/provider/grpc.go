@@ -1,7 +1,9 @@
 package provider
 
 import (
+	"errors"
 	"net"
+	"os"
 
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"go.uber.org/fx"
@@ -12,6 +14,10 @@ import (
 func ProvideGRPCServer(lc fx.Lifecycle, driver *driver.Driver, log *zap.Logger) *grpc.Server {
 	srv := grpc.NewServer()
 	lc.Append(fx.StartStopHook(func() error {
+		_, err := os.Stat(driver.Endpoint)
+		if !errors.Is(err, os.ErrNotExist) {
+			os.Remove(driver.Endpoint)
+		}
 		listener, err := net.Listen("unix", driver.Endpoint)
 		if err != nil {
 			return err

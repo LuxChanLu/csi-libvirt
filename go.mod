@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/container-storage-interface/spec v1.8.0
 	github.com/digitalocean/go-libvirt v0.0.0-20221205150000-2939327a8519
+	github.com/google/uuid v1.3.0
 	github.com/shirou/gopsutil/v3 v3.23.3
 	github.com/stretchr/testify v1.8.2
 	github.com/traefik/paerser v0.2.0
@@ -25,7 +26,6 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/huandu/xstrings v1.3.3 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/mitchellh/copystructure v1.0.0 // indirect

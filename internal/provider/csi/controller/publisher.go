@@ -90,7 +90,7 @@ func (c *Controller) genDiskTargetSuffix(domain libvirt.Domain, prefix, source s
 	idx := 1
 	dev := ""
 	for {
-		dev = fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(int64(idx)))
+		dev = fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(idx))
 		for _, disk := range disks {
 			if strings.EqualFold(disk.Target.Dev, dev) {
 				dev = ""

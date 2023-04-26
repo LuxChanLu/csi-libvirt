@@ -10,7 +10,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestLibvirtProvider(t *testing.T) {
+func TestProvideLibvirt(t *testing.T) {
 	logger := zap.NewNop()
 	cfg := config.ProvideConfig(logger)
 	lc := fxtest.NewLifecycle(t)
