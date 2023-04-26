@@ -16,5 +16,4 @@ func (c *Controller) ListVolumes(context.Context, *csi.ListVolumesRequest) (*csi
 
 func (c *Controller) GetCapacity(context.Context, *csi.GetCapacityRequest) (*csi.GetCapacityResponse, error) {
 	return nil, nil
-
 }

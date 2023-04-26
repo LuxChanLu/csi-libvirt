@@ -29,7 +29,8 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get -qqy install libvirt-daemon-system
-          sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/integration-test.raw
+          sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/test.raw
+          sudo virsh pool-define-as default dir - - - - "/var/lib/libvirt/images"
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
         with:
@@ -43,8 +44,29 @@ jobs:
           parallel: true
           flag-name: ${{ github.job }}
 
+  sanity-test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get -qqy install libvirt-daemon-system
+          sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/test.raw
+          sudo virsh pool-define-as default dir - - - - "/var/lib/libvirt/images"
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache-dependency-path: go.sum
+          cache: true
+      - run: sudo go test -v -race -tags=sanity -cover -coverprofile=coverage.out internal/sanity_test.go
+      - uses: jandelgado/gcov2lcov-action@v1
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel: true
+          flag-name: ${{ github.job }}
+
   publish-test:
-    needs: [unit-test, integration-test]
+    needs: [unit-test, integration-test, sanity-test]
     runs-on: ubuntu-latest
     steps:
       - uses: coverallsapp/github-action@v2

@@ -1,0 +1,31 @@
+<domain type="qemu">
+  <name>test</name>
+  <currentMemory>512</currentMemory>
+  <memory>512</memory>
+  <uuid>23213dfd-0a13-477c-a7d3-6b8acf1766b9</uuid>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/><apic/><pae/>
+  </features>
+  <clock offset="utc"/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <vcpu>1</vcpu>
+  <devices>
+    <disk type='block' device='cdrom'>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+    <input type='tablet' bus='usb'/>
+    <graphics type='vnc' port='-1'/>
+    <console type='pty'/>
+    <sound model='ac97'/>
+    <video>
+      <model type='cirrus'/>
+    </video>
+  </devices>
+</domain>

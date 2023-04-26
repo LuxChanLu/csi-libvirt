@@ -13,6 +13,12 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+var devPrefixes = map[string]string{
+	"virtio": "vd",
+	"usb":    "sd", "scsi": "sd", "sata": "sd",
+	"ide": "hd",
+}
+
 func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.ControllerPublishVolumeRequest) (*csi.ControllerPublishVolumeResponse, error) {
 	var nodeUuid = libvirt.UUID{}
 	nodeUuidRaw, err := hex.DecodeString(request.NodeId)
@@ -27,11 +33,7 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 	}
 	bus := request.VolumeContext[c.Driver.Name+"/bus"]
 	serial := request.VolumeContext[c.Driver.Name+"/serial"]
-	devPrefix := map[string]string{
-		"virtio": "vd",
-		"usb":    "sd", "scsi": "sd", "sata": "sd",
-		"ide": "hd",
-	}[bus]
+	devPrefix := devPrefixes[bus]
 	dev, alreadyMounted, err := c.genDiskTargetSuffix(domain, devPrefix, key)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to generate disk target: %s", err.Error()))

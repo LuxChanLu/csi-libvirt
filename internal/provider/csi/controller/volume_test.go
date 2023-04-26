@@ -11,27 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func (tc *testController) createTestVolume(name string) (*csi.CapacityRange, *csi.CreateVolumeResponse) {
-	capacity := &csi.CapacityRange{RequiredBytes: 1024 * 1024 * 50, LimitBytes: 1024 * 1024 * 100}
-	response, err := tc.CreateVolume(context.Background(), &csi.CreateVolumeRequest{
-		Name:          name,
-		CapacityRange: capacity,
-		VolumeCapabilities: []*csi.VolumeCapability{
-			{AccessType: &csi.VolumeCapability_Block{Block: &csi.VolumeCapability_BlockVolume{}}, AccessMode: &csi.VolumeCapability_AccessMode{Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER}},
-			{AccessType: &csi.VolumeCapability_Mount{Mount: &csi.VolumeCapability_MountVolume{FsType: "ext4"}}, AccessMode: &csi.VolumeCapability_AccessMode{Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER}},
-		},
-		Parameters: map[string]string{
-			"pool":   "default",
-			"bus":    "scsi",
-			"fstype": "ext4",
-		},
-	})
-	assert.NoError(tc.t, err)
-	assert.NotEmpty(tc.t, response.Volume.VolumeId)
-	assert.Equal(tc.t, response.Volume.VolumeId, fmt.Sprintf("default:%s:/var/lib/libvirt/images/%s:%s", name, name, name))
-	return capacity, response
-}
-
 func TestCreateVolume(t *testing.T) {
 	controller := testContoller(t)
 	name := "pvc-9a4901d9-b802-49a3-a1ac-4623a1f50513"
