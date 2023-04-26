@@ -7,7 +7,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  unit-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -19,3 +19,35 @@ jobs:
       - run: go test -v -race -cover -coverprofile=coverage.out ./...
       - uses: jandelgado/gcov2lcov-action@v1
       - uses: coverallsapp/github-action@v2
+        with:
+          parallel: true
+          flag-name: ${{ github.job }}
+
+  integration-test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          sudo apt-get update
+          sudo apt-get -qqy install libvirt-daemon-system
+          sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/integration-test.raw
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache-dependency-path: go.sum
+          cache: true
+      - run: go test -v -race -tags=integration -cover -coverprofile=coverage.out ./...
+      - uses: jandelgado/gcov2lcov-action@v1
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel: true
+          flag-name: ${{ github.job }}
+
+  publish-test:
+    needs: [unit-test, integration-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: coverallsapp/github-action@v2
+        with:
+          parallel-finished: true
+          carryforward: ${{ join(github.job.needs, ',') }}
