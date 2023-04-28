@@ -84,7 +84,7 @@ func TestControllerExpandVolume(t *testing.T) {
 	assert.NoError(t, err)
 	volType, volCapacity, volAllocation, err := controller.libvirt.StorageVolGetInfo(vol)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(209719296), int64(volAllocation))
+	assert.Equal(t, int64(209715200), int64(volAllocation))
 	assert.Equal(t, response.CapacityBytes, int64(volCapacity))
 	assert.Equal(t, volType, int8(0))
 	assert.NoError(t, controller.libvirt.StorageVolDelete(vol, 0))
