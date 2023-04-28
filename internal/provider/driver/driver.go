@@ -8,6 +8,7 @@ import (
 	"github.com/LuxChanLu/csi-libvirt/internal"
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/config"
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -20,12 +21,15 @@ type Driver struct {
 	Version  string
 	Endpoint string
 
+	Libvirt *libvirt.Libvirt
+	Logger  *zap.Logger
+
 	tpl       *template.Template
 	logger    *zap.Logger
 	diskLocks *sync.Map
 }
 
-func ProvideDriver(config *config.Config, log *zap.Logger) *Driver {
+func ProvideDriver(config *config.Config, libvirt *libvirt.Libvirt, log *zap.Logger) *Driver {
 	tpl, err := template.ParseFS(templates, "template/*.tpl")
 	if err != nil {
 		log.Fatal("unable to parse driver template", zap.Error(err))
@@ -34,6 +38,9 @@ func ProvideDriver(config *config.Config, log *zap.Logger) *Driver {
 		Name:     config.DriverName,
 		Version:  internal.BuildVersion,
 		Endpoint: config.Endpoint,
+
+		Libvirt: libvirt,
+		Logger:  log.With(zap.String("tier", "driver")),
 
 		tpl:       tpl,
 		logger:    log,

@@ -31,7 +31,7 @@ func testContoller(t *testing.T) *testController {
 	libvirt := provider.ProvideLibvirt(lc, logger, config)
 	lc.RequireStart()
 	t.Cleanup(lc.RequireStop)
-	driver := driver.ProvideDriver(config, logger)
+	driver := driver.ProvideDriver(config, libvirt, logger)
 	return &testController{libvirt: libvirt, t: t, driver: driver, ControllerServer: provider.ProvideCSIController(driver, logger, libvirt)}
 }
 

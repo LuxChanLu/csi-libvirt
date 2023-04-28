@@ -2,11 +2,8 @@ package controller
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 	"strings"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
@@ -106,38 +103,10 @@ func (c *Controller) ControllerGetVolume(ctx context.Context, request *csi.Contr
 		return response, nil
 	}
 	response.Volume.CapacityBytes = int64(volCapacity)
-	domains, _, err := c.Libvirt.ConnectListAllDomains(1, libvirt.ConnectListDomainsActive|libvirt.ConnectListDomainsInactive)
+	nodeIds, err := c.Driver.DiskAttachedToNodes(ctx, key)
 	if err != nil {
-		c.Logger.Warn("unable to list domains", zap.Error(err))
 		return response, nil
 	}
-	g, _ := errgroup.WithContext(ctx)
-	allDisks := map[string][]driver.Disk{}
-	for _, domain := range domains {
-		domain := domain
-		g.Go(func() error {
-			xml, err := c.Libvirt.DomainGetXMLDesc(domain, 0)
-			if err != nil {
-				return err
-			}
-			disks, err := c.Driver.LookupDomainDisks(xml)
-			if err != nil {
-				return err
-			}
-			allDisks[hex.EncodeToString(domain.UUID[:])] = disks
-			return nil
-		})
-	}
-	if err := g.Wait(); err != nil {
-		c.Logger.Warn("unable to list domains disks", zap.Error(err))
-		return response, nil
-	}
-	for domainUUID, disks := range allDisks {
-		for _, disk := range disks {
-			if strings.EqualFold(disk.Source.File, key) {
-				response.Status.PublishedNodeIds = append(response.Status.PublishedNodeIds, domainUUID)
-			}
-		}
-	}
+	response.Status.PublishedNodeIds = nodeIds
 	return response, nil
 }
