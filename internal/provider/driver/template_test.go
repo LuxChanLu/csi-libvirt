@@ -13,6 +13,6 @@ import (
 )
 
 func TestTemplate(t *testing.T) {
-	driver := driver.ProvideDriver(&config.Config{}, &libvirt.Libvirt{}, zap.NewNop())
+	driver := driver.ProvideControllerDriver(&config.Config{}, &libvirt.Libvirt{}, zap.NewNop())
 	assert.NotNil(t, driver.Template("disk.xml.tpl", map[string]interface{}{}))
 }

@@ -16,7 +16,7 @@ func main() {
 		Name:        "controller",
 		Description: "Controller Server",
 		Run: func(s []string) error {
-			fx.New(options.AppOptions(fx.Invoke(driver.RegisterController))...).Run()
+			fx.New(options.AppOptions(fx.Provide(driver.ProvideControllerDriver), fx.Invoke(driver.RegisterController))...).Run()
 			return nil
 		},
 	})
@@ -27,7 +27,7 @@ func main() {
 		Name:        "node",
 		Description: "Node Server",
 		Run: func(s []string) error {
-			fx.New(options.AppOptions(fx.Invoke(driver.RegisterNode))...).Run()
+			fx.New(options.AppOptions(fx.Provide(driver.ProvideNodeDriver), fx.Invoke(driver.RegisterNode))...).Run()
 			return nil
 		},
 	})

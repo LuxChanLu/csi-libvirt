@@ -29,7 +29,13 @@ type Driver struct {
 	diskLocks *sync.Map
 }
 
-func ProvideDriver(config *config.Config, libvirt *libvirt.Libvirt, log *zap.Logger) *Driver {
+func ProvideControllerDriver(config *config.Config, libvirt *libvirt.Libvirt, log *zap.Logger) *Driver {
+	driver := ProvideNodeDriver(config, log)
+	driver.Libvirt = libvirt
+	return driver
+}
+
+func ProvideNodeDriver(config *config.Config, log *zap.Logger) *Driver {
 	tpl, err := template.ParseFS(templates, "template/*.tpl")
 	if err != nil {
 		log.Fatal("unable to parse driver template", zap.Error(err))
@@ -39,8 +45,7 @@ func ProvideDriver(config *config.Config, libvirt *libvirt.Libvirt, log *zap.Log
 		Version:  internal.BuildVersion,
 		Endpoint: config.Endpoint,
 
-		Libvirt: libvirt,
-		Logger:  log.With(zap.String("tier", "driver")),
+		Logger: log.With(zap.String("tier", "driver")),
 
 		tpl:       tpl,
 		logger:    log,

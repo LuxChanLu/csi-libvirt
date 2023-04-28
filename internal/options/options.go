@@ -4,7 +4,6 @@ import (
 	"github.com/LuxChanLu/csi-libvirt/internal"
 	"github.com/LuxChanLu/csi-libvirt/internal/provider"
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/config"
-	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
 	"go.uber.org/zap"
@@ -15,7 +14,6 @@ func AppOptions(opts ...fx.Option) []fx.Option {
 		fx.Provide(provider.ProvideLogger),
 		fx.Provide(provider.ProvideLibvirt),
 		fx.Provide(config.ProvideConfig),
-		fx.Provide(driver.ProvideDriver),
 		fx.Provide(provider.ProvideGRPCServer),
 		fx.Provide(provider.ProvideCSIIdentity),
 		fx.Provide(provider.ProvideCSIController),
