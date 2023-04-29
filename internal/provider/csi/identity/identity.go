@@ -5,13 +5,11 @@ import (
 
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/digitalocean/go-libvirt"
 	"google.golang.org/protobuf/types/known/wrapperspb"
 )
 
 type Identity struct {
-	Driver  *driver.Driver
-	Libvirt *libvirt.Libvirt
+	Driver *driver.Driver
 }
 
 func (i *Identity) GetPluginInfo(context.Context, *csi.GetPluginInfoRequest) (*csi.GetPluginInfoResponse, error) {
@@ -40,9 +38,11 @@ func (i *Identity) GetPluginCapabilities(context.Context, *csi.GetPluginCapabili
 }
 
 func (i *Identity) Probe(ctx context.Context, request *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	_, err := i.Libvirt.ConnectGetLibVersion()
-	if err != nil {
-		return &csi.ProbeResponse{Ready: wrapperspb.Bool(false)}, nil
+	if i.Driver.Libvirt != nil {
+		_, err := i.Driver.Libvirt.ConnectGetLibVersion()
+		if err != nil {
+			return &csi.ProbeResponse{Ready: wrapperspb.Bool(false)}, nil
+		}
 	}
 	return &csi.ProbeResponse{Ready: wrapperspb.Bool(true)}, nil
 }
