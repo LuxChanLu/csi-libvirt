@@ -68,15 +68,11 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	case "virtio":
 		serial = strconv.FormatInt(int64(crc32.ChecksumIEEE([]byte(serial))), 16)
 	}
-	_, volCapacity, _, err := c.Libvirt.StorageVolGetInfo(vol)
-	if err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get volume information: %s", err.Error()))
-	}
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
 			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key, serial),
-			CapacityBytes: int64(volCapacity),
+			CapacityBytes: request.CapacityRange.RequiredBytes,
 			VolumeContext: map[string]string{
 				c.Driver.Name + "/pool":   vol.Pool,
 				c.Driver.Name + "/bus":    bus,

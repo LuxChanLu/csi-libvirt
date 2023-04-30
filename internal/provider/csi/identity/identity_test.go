@@ -41,14 +41,14 @@ func TestProbe(t *testing.T) {
 	lc.RequireStart()
 	defer lc.RequireStop()
 
-	result, err := (&identity.Identity{Driver: &driver.Driver{Name: "NameTest", Version: "VersionTest"}, Libvirt: lv}).Probe(context.Background(), &csi.ProbeRequest{})
+	result, err := (&identity.Identity{Driver: &driver.Driver{Name: "NameTest", Version: "VersionTest", Libvirt: lv}}).Probe(context.Background(), &csi.ProbeRequest{})
 	assert.NoError(t, err)
 	assert.True(t, result.Ready.Value)
-	result, err = (&identity.Identity{Libvirt: libvirt.NewWithDialer(dialers.NewLocal(dialers.WithSocket("unix:///tmp/not-existing.sock")))}).Probe(context.Background(), &csi.ProbeRequest{})
+	result, err = (&identity.Identity{Driver: &driver.Driver{Libvirt: libvirt.NewWithDialer(dialers.NewLocal(dialers.WithSocket("unix:///tmp/not-existing.sock")))}}).Probe(context.Background(), &csi.ProbeRequest{})
 	assert.NoError(t, err)
 	assert.False(t, result.Ready.Value)
 
-	result, err := (&identity.Identity{Driver: &driver.Driver{Name: "NameTest", Version: "VersionTest"}}).Probe(context.Background(), &csi.ProbeRequest{})
+	result, err = (&identity.Identity{Driver: &driver.Driver{Name: "NameTest", Version: "VersionTest"}}).Probe(context.Background(), &csi.ProbeRequest{})
 	assert.NoError(t, err)
 	assert.True(t, result.Ready.Value)
 }

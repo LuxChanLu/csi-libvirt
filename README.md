@@ -21,3 +21,6 @@ parameters:
 reclaimPolicy: Retain
 allowVolumeExpansion: true
 ```
+
+# TODO
+- SCSI or other Rescan on node
