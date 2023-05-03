@@ -13,6 +13,9 @@ RUN go build $BUILD_FLAGS -o ./csi cmd/main.go
 
 FROM alpine:3.17
 
+LABEL org.opencontainers.image.source=https://github.com/LuxChanLu/csi-libvirt
+LABEL org.opencontainers.image.description="CSI LibVirt"
+
 RUN apk add --no-cache e2fsprogs exfatprogs btrfs-progs blkid xfsprogs ntfs-3g-progs hfsprogs mount umount util-linux-misc blkid
 
 USER csi:csi
