@@ -8,9 +8,9 @@ import (
 )
 
 type Config struct {
-	DriverName   string
-	Endpoint     string
-	QEMUEndpoint string
+	DriverName      string
+	Endpoint        string
+	LibvirtEndpoint string
 
 	Node *ConfigNode
 }
@@ -26,9 +26,9 @@ const (
 
 func ProvideConfig(logger *zap.Logger) *Config {
 	config := &Config{
-		DriverName:   driverName,
-		Endpoint:     "/var/lib/kubelet/plugins/" + driverName + "/csi.sock",
-		QEMUEndpoint: "/var/run/libvirt/libvirt-sock",
+		DriverName:      driverName,
+		Endpoint:        "/var/lib/kubelet/plugins/" + driverName + "/csi.sock",
+		LibvirtEndpoint: "unix:///var/run/libvirt/libvirt-sock",
 		Node: &ConfigNode{
 			MachineIDFile: "/etc/machine-id",
 		},
