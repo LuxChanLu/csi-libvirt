@@ -35,12 +35,14 @@ func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) socket.Dialer 
 	var dialer socket.Dialer
 	switch endpoint.Scheme {
 	case "tcp":
+		log.Info("connect to a tcp dialer", zap.String("hostname", endpoint.Hostname()), zap.String("port", endpoint.Port()))
 		opts := []dialers.RemoteOption{}
 		if endpoint.Port() != "" {
 			opts = append(opts, dialers.UsePort(endpoint.Port()))
 		}
 		dialer = dialers.NewRemote(endpoint.Hostname(), opts...)
 	case "unix":
+		log.Info("connect to a unix dialer", zap.String("endpoint", endpoint.Path))
 		dialer = dialers.NewLocal(dialers.WithSocket(endpoint.Path))
 	default:
 		log.Fatal("unimplemented protocol for libvirt", zap.String("protocol", endpoint.Scheme))
