@@ -39,7 +39,7 @@ func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) socket.Dialer 
 		if endpoint.Port() != "" {
 			opts = append(opts, dialers.UsePort(endpoint.Port()))
 		}
-		dialer = dialers.NewRemote(endpoint.Host, opts...)
+		dialer = dialers.NewRemote(endpoint.Hostname(), opts...)
 	case "unix":
 		dialer = dialers.NewLocal(dialers.WithSocket(endpoint.Path))
 	default:
