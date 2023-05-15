@@ -53,6 +53,8 @@ func (c *Controller) ControllerExpandVolume(ctx context.Context, request *csi.Co
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
 	poolName, name, _, _ := extratVolId(request.VolumeId)
+	unlock := c.Driver.DiskLock(poolName, name)
+	defer unlock()
 
 	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
 	if err != nil {

@@ -26,6 +26,9 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to parse uuid node id: %s", err.Error()))
 	}
 	poolName, name, key, _ := extratVolId(request.VolumeId)
+	unlock := c.Driver.DiskLock(poolName, name)
+	defer unlock()
+
 	c.Logger.Info("volume gonna be published", zap.String("nodeId", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 	domain, err := c.Libvirt.DomainLookupByUUID(nodeUuid)
 	if err != nil {
@@ -59,6 +62,9 @@ func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to parse uuid node id: %s", err.Error()))
 	}
 	poolName, name, key, serial := extratVolId(request.VolumeId)
+	unlock := c.Driver.DiskLock(poolName, name)
+	defer unlock()
+
 	c.Logger.Info("volume gonna be unpublished", zap.String("nodeId", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 	domain, err := c.Libvirt.DomainLookupByUUID(nodeUuid)
 	if err != nil {
