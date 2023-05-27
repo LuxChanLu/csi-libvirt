@@ -3,5 +3,5 @@ name: csi-libvirt
 description: LibVirt CSI Driver
 type: application
 
-version: 0.4.3
-appVersion: "v0.4.3"
+version: 0.5.0
+appVersion: "v0.5.0"
