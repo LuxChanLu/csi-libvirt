@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/xml"
+	"fmt"
 	"strings"
 
+	"github.com/beevik/etree"
 	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
@@ -86,4 +88,42 @@ func (d *Driver) DiskAttachedToNodes(ctx context.Context, file string) ([]string
 		}
 	}
 	return nodeIds, nil
+}
+
+func (d *Driver) AttachDisk(domain libvirt.Domain, domainXml, disk, serial string) error {
+	domainDoc := etree.NewDocument()
+	if err := domainDoc.ReadFromString(domainXml); err != nil {
+		return err
+	}
+	if domainDoc.FindElement(fmt.Sprintf("//domain/devices/disk[serial='%s']", serial)) == nil {
+		diskDoc := etree.NewDocument()
+		if err := diskDoc.ReadFromString(disk); err != nil {
+			return err
+		}
+		devices := domainDoc.FindElement("//domain/devices")
+		devices.AddChild(diskDoc.Root().Copy())
+		newDomainXml, err := domainDoc.WriteToString()
+		if err != nil {
+			return err
+		}
+		return d.Libvirt.DomainUpdateDeviceFlags(domain, newDomainXml, libvirt.DomainDeviceModifyConfig)
+	}
+	return nil
+}
+
+func (d *Driver) DettachDisk(domain libvirt.Domain, domainXml, serial string) error {
+	domainDoc := etree.NewDocument()
+	if err := domainDoc.ReadFromString(domainXml); err != nil {
+		return err
+	}
+	disk := domainDoc.FindElement(fmt.Sprintf("//domain/devices/disk[serial='%s']", serial))
+	if disk != nil {
+		disk.Parent().RemoveChild(disk)
+		newDomainXml, err := domainDoc.WriteToString()
+		if err != nil {
+			return err
+		}
+		return d.Libvirt.DomainUpdateDeviceFlags(domain, newDomainXml, libvirt.DomainDeviceModifyConfig)
+	}
+	return nil
 }
