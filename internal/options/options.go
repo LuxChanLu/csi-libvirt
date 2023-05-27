@@ -14,7 +14,7 @@ func AppOptions(opts ...fx.Option) []fx.Option {
 	return append([]fx.Option{
 		fx.Provide(provider.ProvideLogger),
 		fx.Provide(fx.Annotate(hypervisor.ProvideLibvirtDialer, fx.ResultTags(`group:"libvirt.dialers"`))),
-		fx.Provide(fx.Annotate(hypervisor.ProvideLibvirt, fx.ParamTags(`group:"libvirt.dialers"`))),
+		fx.Provide(hypervisor.ProvideLibvirt),
 		fx.Provide(config.ProvideConfig),
 		fx.Provide(provider.ProvideGRPCServer),
 		fx.Provide(provider.ProvideCSIIdentity),

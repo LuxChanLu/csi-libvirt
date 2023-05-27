@@ -27,9 +27,16 @@ type ZonedDialer struct {
 	Zone string
 }
 
-func ProvideLibvirt(lc fx.Lifecycle, log *zap.Logger, dialers []*ZonedDialer, config *config.Config) *Hypervisors {
-	virts := make([]*ZonedHypervisor, len(dialers))
-	for idx, dialer := range dialers {
+type provideLibvirtParams struct {
+	fx.In
+
+	Log     *zap.Logger
+	Dialers []*ZonedDialer `group:"libvirt.dialers"`
+}
+
+func ProvideLibvirt(lc fx.Lifecycle, params *provideLibvirtParams) *Hypervisors {
+	virts := make([]*ZonedHypervisor, len(params.Dialers))
+	for idx, dialer := range params.Dialers {
 		virts[idx] = &ZonedHypervisor{Libvirt: libvirt.NewWithDialer(dialer), Zone: dialer.Zone}
 	}
 	lc.Append(fx.StartStopHook(func() error {
@@ -41,7 +48,7 @@ func ProvideLibvirt(lc fx.Lifecycle, log *zap.Logger, dialers []*ZonedDialer, co
 			if err != nil {
 				return err
 			}
-			log.Info("libvirt connected", zap.Uint64("version", version))
+			params.Log.Info("libvirt connected", zap.Uint64("version", version))
 		}
 		return nil
 	}, func() error {
@@ -52,7 +59,7 @@ func ProvideLibvirt(lc fx.Lifecycle, log *zap.Logger, dialers []*ZonedDialer, co
 		}
 		return nil
 	}))
-	return &Hypervisors{Libvirts: virts, Logger: log.With(zap.String("tier", "hypervisor"))}
+	return &Hypervisors{Libvirts: virts, Logger: params.Log.With(zap.String("tier", "hypervisor"))}
 }
 
 func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) []*ZonedDialer {
