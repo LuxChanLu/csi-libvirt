@@ -106,8 +106,11 @@ func (d *Driver) AttachDisk(domainXml, disk, serial string) error {
 		if err != nil {
 			return err
 		}
-		_, err = d.Libvirt.DomainDefineXML(newDomainXml)
-		return err
+		domain, err := d.Libvirt.DomainDefineXML(newDomainXml)
+		if err != nil {
+			return err
+		}
+		return d.Libvirt.DomainAttachDevice(domain, disk)
 	}
 	return nil
 }
@@ -124,8 +127,11 @@ func (d *Driver) DettachDisk(domainXml, serial string) error {
 		if err != nil {
 			return err
 		}
-		_, err = d.Libvirt.DomainDefineXML(newDomainXml)
-		return err
+		domain, err := d.Libvirt.DomainDefineXML(newDomainXml)
+		if err != nil {
+			return err
+		}
+		return d.Libvirt.DomainDetachDeviceAlias(domain, disk.FindElement("//alias").SelectAttrValue("name", ""), 0)
 	}
 	return nil
 }

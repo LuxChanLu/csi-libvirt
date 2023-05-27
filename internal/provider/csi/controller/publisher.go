@@ -89,9 +89,9 @@ func (c *Controller) genDiskTargetSuffix(domainXml, prefix string) (string, erro
 	for _, actualDisk := range actualDisks {
 		target := actualDisk.FindElement("//target")
 		if target != nil {
-			dev := target.SelectAttr("dev")
-			if dev != nil {
-				targetDevs = append(targetDevs, dev.Value)
+			dev := target.SelectAttrValue("dev", "")
+			if dev != "" {
+				targetDevs = append(targetDevs, dev)
 			}
 		}
 	}
