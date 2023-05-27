@@ -66,6 +66,12 @@ spec:
               value: /csi/csi.sock
             - name: CSI_NODE_MACHINEIDFILE
               value: {{ .Values.node.machineIdFile }}
+            - name: CSI_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ZONE_NODELABEL
+              value: {{ .Values.node.zone.nodeLabel }}
           {{- with .Values.node.env }}
             {{- toYaml . | nindent 12 }}
           {{- end }}

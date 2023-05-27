@@ -25,15 +25,19 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 	if err != nil || copy(nodeUuid[:], nodeUuidRaw) != libvirt.UUIDBuflen {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to parse uuid node id: %s", err.Error()))
 	}
-	poolName, name, key, _ := extratVolId(request.VolumeId)
+	poolName, name, key, _, zone := extratVolId(request.VolumeId)
 	unlock := c.Driver.DiskLock(poolName, name)
 	defer unlock()
 
-	domain, err := c.Libvirt.DomainLookupByUUID(nodeUuid)
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
+	domain, err := lv.DomainLookupByUUID(nodeUuid)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
-	domainXml, err := c.Libvirt.DomainGetXMLDesc(domain, 0)
+	domainXml, err := lv.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
@@ -45,7 +49,7 @@ func (c *Controller) ControllerPublishVolume(ctx context.Context, request *csi.C
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to generate disk target: %s", err.Error()))
 	}
 	c.Logger.Info("volume gonna be published", zap.String("nodeId", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key), zap.String("dev", dev))
-	if err := c.Driver.AttachDisk(domainXml, c.Driver.Template("disk.xml.tpl", map[string]interface{}{"Source": key, "Bus": bus, "Dev": dev, "Serial": serial}), serial); err != nil {
+	if err := c.Driver.AttachDisk(lv, domainXml, c.Driver.Template("disk.xml.tpl", map[string]interface{}{"Source": key, "Bus": bus, "Dev": dev, "Serial": serial}), serial); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to attach disk to domain: %s", err.Error()))
 	} else {
 		c.Logger.Info("volume attached to domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name), zap.String("serial", serial), zap.String("bus", bus), zap.String("dev", dev))
@@ -59,20 +63,24 @@ func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi
 	if err != nil || copy(nodeUuid[:], nodeUuidRaw) != libvirt.UUIDBuflen {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to parse uuid node id: %s", err.Error()))
 	}
-	poolName, name, key, serial := extratVolId(request.VolumeId)
+	poolName, name, key, serial, zone := extratVolId(request.VolumeId)
 	unlock := c.Driver.DiskLock(poolName, name)
 	defer unlock()
 
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
 	c.Logger.Info("volume gonna be unpublished", zap.String("nodeId", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
-	domain, err := c.Libvirt.DomainLookupByUUID(nodeUuid)
+	domain, err := lv.DomainLookupByUUID(nodeUuid)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
-	domainXml, err := c.Libvirt.DomainGetXMLDesc(domain, 0)
+	domainXml, err := lv.DomainGetXMLDesc(domain, 0)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
 	}
-	if err := c.Driver.DettachDisk(domainXml, serial); err != nil {
+	if err := c.Driver.DettachDisk(lv, domainXml, serial); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to dettached disk to domain: %s", err.Error()))
 	}
 	c.Logger.Info("volume dettached from domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name))

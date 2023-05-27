@@ -12,12 +12,23 @@ type Config struct {
 	Endpoint        string
 	LibvirtEndpoint string
 
+	Zone *ZoneConfig
 	Node *ConfigNode
 }
 
 type ConfigNode struct {
+	Name          string
 	MachineIDFile string
-	Endpoint      string
+}
+
+type ZoneConfig struct {
+	NodeLabel string
+	Zones     []*Zone
+}
+
+type Zone struct {
+	Name            string
+	LibvirtEndpoint string
 }
 
 const (
@@ -31,6 +42,9 @@ func ProvideConfig(logger *zap.Logger) *Config {
 		LibvirtEndpoint: "unix:///var/run/libvirt/libvirt-sock",
 		Node: &ConfigNode{
 			MachineIDFile: "/etc/machine-id",
+		},
+		Zone: &ZoneConfig{
+			Zones: []*Zone{},
 		},
 	}
 	if err := env.Decode(os.Environ(), "CSI_", config); err != nil {

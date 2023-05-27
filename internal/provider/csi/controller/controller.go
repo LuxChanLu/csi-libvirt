@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/driver"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/hypervisor"
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
@@ -14,9 +15,9 @@ import (
 )
 
 type Controller struct {
-	Driver  *driver.Driver
-	Libvirt *libvirt.Libvirt
-	Logger  *zap.Logger
+	Driver      *driver.Driver
+	Hypervisors *hypervisor.Hypervisors
+	Logger      *zap.Logger
 }
 
 func (c *Controller) ControllerGetCapabilities(context.Context, *csi.ControllerGetCapabilitiesRequest) (*csi.ControllerGetCapabilitiesResponse, error) {
@@ -52,27 +53,31 @@ func (c *Controller) ControllerExpandVolume(ctx context.Context, request *csi.Co
 	} else if violations := validateCapabilities([]*csi.VolumeCapability{request.VolumeCapability}); len(violations) > 0 {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
-	poolName, name, _, _ := extratVolId(request.VolumeId)
+	poolName, name, _, _, zone := extratVolId(request.VolumeId)
 	unlock := c.Driver.DiskLock(poolName, name)
 	defer unlock()
 
-	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
+	pool, err := lv.StoragePoolLookupByName(poolName)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", poolName, err.Error()))
 	}
-	vol, err := c.Libvirt.StorageVolLookupByName(pool, name)
+	vol, err := lv.StorageVolLookupByName(pool, name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool volume: %s, %s", name, err.Error()))
 	}
-	err = c.Libvirt.StorageVolResize(vol, uint64(request.CapacityRange.RequiredBytes), 0)
+	err = lv.StorageVolResize(vol, uint64(request.CapacityRange.RequiredBytes), 0)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to resize volume: %s, %s", name, err.Error()))
 	}
-	err = c.Libvirt.StorageVolResize(vol, uint64(request.CapacityRange.LimitBytes), libvirt.StorageVolResizeAllocate)
+	err = lv.StorageVolResize(vol, uint64(request.CapacityRange.LimitBytes), libvirt.StorageVolResizeAllocate)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to resize allocated volume: %s, %s", name, err.Error()))
 	}
-	_, volCapacity, _, err := c.Libvirt.StorageVolGetInfo(vol)
+	_, volCapacity, _, err := lv.StorageVolGetInfo(vol)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get volume information: %s", err.Error()))
 	}
@@ -81,7 +86,7 @@ func (c *Controller) ControllerExpandVolume(ctx context.Context, request *csi.Co
 }
 
 func (c *Controller) ControllerGetVolume(ctx context.Context, request *csi.ControllerGetVolumeRequest) (*csi.ControllerGetVolumeResponse, error) {
-	poolName, name, key, _ := extratVolId(request.VolumeId)
+	poolName, name, key, _, zone := extratVolId(request.VolumeId)
 	response := &csi.ControllerGetVolumeResponse{Volume: &csi.Volume{
 		VolumeId:      request.VolumeId,
 		VolumeContext: map[string]string{},
@@ -89,23 +94,28 @@ func (c *Controller) ControllerGetVolume(ctx context.Context, request *csi.Contr
 		PublishedNodeIds: []string{},
 		VolumeCondition:  &csi.VolumeCondition{Abnormal: false, Message: "Disk OK"},
 	}}
-	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
+
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
+	pool, err := lv.StoragePoolLookupByName(poolName)
 	if err != nil {
 		response.Status.VolumeCondition = &csi.VolumeCondition{Abnormal: true, Message: fmt.Sprintf("Pool %s not found or with error (%s)", poolName, err.Error())}
 		return response, nil
 	}
-	vol, err := c.Libvirt.StorageVolLookupByName(pool, name)
+	vol, err := lv.StorageVolLookupByName(pool, name)
 	if err != nil {
 		response.Status.VolumeCondition = &csi.VolumeCondition{Abnormal: true, Message: fmt.Sprintf("Disk %s in pool %s not found or with error (%s)", name, poolName, err.Error())}
 		return response, nil
 	}
-	_, volCapacity, _, err := c.Libvirt.StorageVolGetInfo(vol)
+	_, volCapacity, _, err := lv.StorageVolGetInfo(vol)
 	if err != nil {
 		response.Status.VolumeCondition = &csi.VolumeCondition{Abnormal: true, Message: fmt.Sprintf("Unable to get disk %s in pool %s informations (%s)", name, poolName, err.Error())}
 		return response, nil
 	}
 	response.Volume.CapacityBytes = int64(volCapacity)
-	nodeIds, err := c.Driver.DiskAttachedToNodes(ctx, key)
+	nodeIds, err := c.Driver.DiskAttachedToNodes(ctx, lv, key)
 	if err != nil {
 		return response, nil
 	}

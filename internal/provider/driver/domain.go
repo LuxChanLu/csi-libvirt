@@ -52,8 +52,8 @@ func (d *Driver) LookupDomainDisks(xmlDesc string) ([]Disk, error) {
 	return domainXML.Devices.Disks, nil
 }
 
-func (d *Driver) DiskAttachedToNodes(ctx context.Context, file string) ([]string, error) {
-	domains, _, err := d.Libvirt.ConnectListAllDomains(1, libvirt.ConnectListDomainsActive|libvirt.ConnectListDomainsInactive)
+func (d *Driver) DiskAttachedToNodes(ctx context.Context, lv *libvirt.Libvirt, file string) ([]string, error) {
+	domains, _, err := lv.ConnectListAllDomains(1, libvirt.ConnectListDomainsActive|libvirt.ConnectListDomainsInactive)
 	if err != nil {
 		d.Logger.Warn("unable to list domains", zap.Error(err))
 		return nil, err
@@ -63,7 +63,7 @@ func (d *Driver) DiskAttachedToNodes(ctx context.Context, file string) ([]string
 	for _, domain := range domains {
 		domain := domain
 		g.Go(func() error {
-			xml, err := d.Libvirt.DomainGetXMLDesc(domain, 0)
+			xml, err := lv.DomainGetXMLDesc(domain, 0)
 			if err != nil {
 				return err
 			}
@@ -90,7 +90,7 @@ func (d *Driver) DiskAttachedToNodes(ctx context.Context, file string) ([]string
 	return nodeIds, nil
 }
 
-func (d *Driver) AttachDisk(domainXml, disk, serial string) error {
+func (d *Driver) AttachDisk(lv *libvirt.Libvirt, domainXml, disk, serial string) error {
 	domainDoc := etree.NewDocument()
 	if err := domainDoc.ReadFromString(domainXml); err != nil {
 		return err
@@ -106,16 +106,16 @@ func (d *Driver) AttachDisk(domainXml, disk, serial string) error {
 		if err != nil {
 			return err
 		}
-		domain, err := d.Libvirt.DomainDefineXML(newDomainXml)
+		domain, err := lv.DomainDefineXML(newDomainXml)
 		if err != nil {
 			return err
 		}
-		return d.Libvirt.DomainAttachDevice(domain, disk)
+		return lv.DomainAttachDevice(domain, disk)
 	}
 	return nil
 }
 
-func (d *Driver) DettachDisk(domainXml, serial string) error {
+func (d *Driver) DettachDisk(lv *libvirt.Libvirt, domainXml, serial string) error {
 	domainDoc := etree.NewDocument()
 	if err := domainDoc.ReadFromString(domainXml); err != nil {
 		return err
@@ -127,11 +127,11 @@ func (d *Driver) DettachDisk(domainXml, serial string) error {
 		if err != nil {
 			return err
 		}
-		domain, err := d.Libvirt.DomainDefineXML(newDomainXml)
+		domain, err := lv.DomainDefineXML(newDomainXml)
 		if err != nil {
 			return err
 		}
-		return d.Libvirt.DomainDetachDeviceAlias(domain, disk.FindElement("alias").SelectAttrValue("name", ""), 0)
+		return lv.DomainDetachDeviceAlias(domain, disk.FindElement("alias").SelectAttrValue("name", ""), 0)
 	}
 	return nil
 }

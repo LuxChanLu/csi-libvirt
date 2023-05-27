@@ -38,10 +38,12 @@ func (i *Identity) GetPluginCapabilities(context.Context, *csi.GetPluginCapabili
 }
 
 func (i *Identity) Probe(ctx context.Context, request *csi.ProbeRequest) (*csi.ProbeResponse, error) {
-	if i.Driver.Libvirt != nil {
-		_, err := i.Driver.Libvirt.ConnectGetLibVersion()
-		if err != nil {
-			return &csi.ProbeResponse{Ready: wrapperspb.Bool(false)}, nil
+	if i.Driver.Hypervisors != nil {
+		for _, lv := range i.Driver.Hypervisors.Libvirts {
+			_, err := lv.ConnectGetLibVersion()
+			if err != nil {
+				return &csi.ProbeResponse{Ready: wrapperspb.Bool(false)}, nil
+			}
 		}
 	}
 	return &csi.ProbeResponse{Ready: wrapperspb.Bool(true)}, nil

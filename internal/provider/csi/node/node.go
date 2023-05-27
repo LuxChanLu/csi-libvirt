@@ -15,6 +15,7 @@ type Node struct {
 	MachineID string
 	Formatter *mount.SafeFormatAndMount
 	Mounter   mount.Interface
+	Zone      string
 }
 
 func (n *Node) NodeGetVolumeStats(context.Context, *csi.NodeGetVolumeStatsRequest) (*csi.NodeGetVolumeStatsResponse, error) {
@@ -51,5 +52,9 @@ func (n *Node) NodeGetCapabilities(context.Context, *csi.NodeGetCapabilitiesRequ
 
 func (n *Node) NodeGetInfo(context.Context, *csi.NodeGetInfoRequest) (*csi.NodeGetInfoResponse, error) {
 	n.Logger.Info("NodeGetInfo called")
-	return &csi.NodeGetInfoResponse{NodeId: n.MachineID}, nil
+	response := &csi.NodeGetInfoResponse{NodeId: n.MachineID}
+	if n.Zone != "" {
+		response.AccessibleTopology = &csi.Topology{Segments: map[string]string{n.Driver.Name + "/zone": n.Zone}}
+	}
+	return response, nil
 }

@@ -7,8 +7,8 @@ import (
 
 	"github.com/LuxChanLu/csi-libvirt/internal"
 	"github.com/LuxChanLu/csi-libvirt/internal/provider/config"
+	"github.com/LuxChanLu/csi-libvirt/internal/provider/hypervisor"
 	"github.com/container-storage-interface/spec/lib/go/csi"
-	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
@@ -21,17 +21,17 @@ type Driver struct {
 	Version  string
 	Endpoint string
 
-	Libvirt *libvirt.Libvirt
-	Logger  *zap.Logger
+	Hypervisors *hypervisor.Hypervisors
+	Logger      *zap.Logger
 
 	tpl       *template.Template
 	logger    *zap.Logger
 	diskLocks *sync.Map
 }
 
-func ProvideControllerDriver(config *config.Config, libvirt *libvirt.Libvirt, log *zap.Logger) *Driver {
+func ProvideControllerDriver(config *config.Config, hypervisors *hypervisor.Hypervisors, log *zap.Logger) *Driver {
 	driver := ProvideNodeDriver(config, log)
-	driver.Libvirt = libvirt
+	driver.Hypervisors = hypervisors
 	return driver
 }
 

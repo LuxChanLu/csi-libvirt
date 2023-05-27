@@ -25,3 +25,5 @@ node:
   affinity: {}
   env: []
   machineIdFile: /etc/machine-id
+  zone:
+    nodeLabel:

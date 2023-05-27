@@ -33,13 +33,25 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	if violations := validateCapabilities(request.VolumeCapabilities); len(violations) > 0 {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
+	zone := ""
+	if request.AccessibilityRequirements.Preferred != nil {
+		for _, topology := range request.AccessibilityRequirements.Preferred {
+			if zoneSegment, ok := topology.Segments[c.Driver.Name+"/zone"]; ok && zoneSegment != "" {
+				zone = zoneSegment
+			}
+		}
+	}
 	poolName := request.Parameters["pool"]
 	bus := request.Parameters["bus"]
 	fstype := request.Parameters["fstype"]
 	unlock := c.Driver.DiskLock(poolName, request.Name)
 	defer unlock()
 
-	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
+	pool, err := lv.StoragePoolLookupByName(poolName)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", poolName, err.Error()))
 	}
@@ -47,9 +59,9 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 
 	var vol libvirt.StorageVol
 
-	vol, err = c.Libvirt.StorageVolLookupByName(pool, request.Name)
+	vol, err = lv.StorageVolLookupByName(pool, request.Name)
 	if err != nil {
-		vol, err = c.Libvirt.StorageVolCreateXML(pool, c.Driver.Template("volume.xml.tpl", map[string]interface{}{
+		vol, err = lv.StorageVolCreateXML(pool, c.Driver.Template("volume.xml.tpl", map[string]interface{}{
 			"Name":       request.Name,
 			"Allocation": request.CapacityRange.LimitBytes,
 			"Capacity":   request.CapacityRange.RequiredBytes,
@@ -71,13 +83,14 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 
 	return &csi.CreateVolumeResponse{
 		Volume: &csi.Volume{
-			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key, serial),
+			VolumeId:      buildVolId(vol.Pool, vol.Name, vol.Key, serial, zone),
 			CapacityBytes: request.CapacityRange.RequiredBytes,
 			VolumeContext: map[string]string{
 				c.Driver.Name + "/pool":   vol.Pool,
 				c.Driver.Name + "/bus":    bus,
 				c.Driver.Name + "/serial": serial,
 				c.Driver.Name + "/fstype": fstype,
+				c.Driver.Name + "/zone":   zone,
 			},
 		},
 	}, nil
@@ -88,22 +101,26 @@ func (c *Controller) DeleteVolume(ctx context.Context, request *csi.DeleteVolume
 		return nil, status.Error(codes.InvalidArgument, "DeleteVolume Volume ID must be provided")
 	}
 
-	poolName, name, key, _ := extratVolId(request.VolumeId)
+	poolName, name, key, _, zone := extratVolId(request.VolumeId)
 	c.Logger.Info("gonna destroy volume", zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 	unlock := c.Driver.DiskLock(poolName, name)
 	defer unlock()
 
-	pool, err := c.Libvirt.StoragePoolLookupByName(poolName)
+	lv, err := c.Hypervisors.Zone(zone)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
+	}
+	pool, err := lv.StoragePoolLookupByName(poolName)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get storage pool: %s, %s", poolName, err.Error()))
 	}
 
-	vol, err := c.Libvirt.StorageVolLookupByName(pool, name)
+	vol, err := lv.StorageVolLookupByName(pool, name)
 	if err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get storage volume: %s, %s", key, err.Error()))
 	}
 
-	if err := c.Libvirt.StorageVolDelete(vol, libvirt.StorageVolDeleteNormal); err != nil {
+	if err := lv.StorageVolDelete(vol, libvirt.StorageVolDeleteNormal); err != nil {
 		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to delete storage volume: %s, %s", key, err.Error()))
 	}
 
@@ -127,11 +144,14 @@ func validateCapabilities(caps []*csi.VolumeCapability) []string {
 	return violations.List()
 }
 
-func buildVolId(pool, name, key, serial string) string {
+func buildVolId(pool, name, key, serial, zone string) string {
 	return strings.Join([]string{pool, name, key, serial}, ":")
 }
 
-func extratVolId(volId string) (pool, name, key, serial string) {
+func extratVolId(volId string) (pool, name, key, serial, zone string) {
 	ids := strings.Split(volId, ":")
-	return ids[0], ids[1], ids[2], ids[3]
+	if len(ids) < 5 {
+		return ids[0], ids[1], ids[2], ids[3], ""
+	}
+	return ids[0], ids[1], ids[2], ids[3], ids[4]
 }

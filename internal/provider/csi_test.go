@@ -29,7 +29,7 @@ func TestProvideCSINode(t *testing.T) {
 	defer func() {
 		assert.NoError(t, os.Remove("/tmp/machine-id"))
 	}()
-	node := provider.ProvideCSINode(&driver.Driver{Endpoint: "/tmp/csi-libvirt-test.sock"}, zap.NewNop(), &config.Config{Node: &config.ConfigNode{MachineIDFile: "/tmp/machine-id"}}).(*node.Node)
+	node := provider.ProvideCSINode(&driver.Driver{Endpoint: "/tmp/csi-libvirt-test.sock"}, zap.NewNop(), &config.Config{Node: &config.ConfigNode{MachineIDFile: "/tmp/machine-id"}}, nil).(*node.Node)
 	assert.NotNil(t, node)
 	assert.Equal(t, machineId, node.MachineID)
 }
