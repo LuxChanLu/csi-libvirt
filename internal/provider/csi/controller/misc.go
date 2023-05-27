@@ -60,7 +60,7 @@ func (c *Controller) ListVolumes(ctx context.Context, request *csi.ListVolumesRe
 	}
 	startingToken, err := strconv.ParseInt(request.StartingToken, 10, 64)
 	if err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to parse starting token: %s", err.Error()))
+		startingToken = 0
 	}
 	paginatedDisk := disks[startingToken:request.MaxEntries]
 	return &csi.ListVolumesResponse{Entries: paginatedDisk, NextToken: fmt.Sprintf("%d", len(paginatedDisk))}, nil

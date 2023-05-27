@@ -35,7 +35,7 @@ spec:
       serviceAccount: csi-libvirt-controller-sa
       containers:
         - name: csi-provisioner
-          image: registry.k8s.io/sig-storage/csi-provisioner:v3.4.0
+          image: registry.k8s.io/sig-storage/csi-provisioner:v3.5.0
           args:
             - "--csi-address=$(ADDRESS)"
             - "--feature-gates=Topology=true"
@@ -49,7 +49,7 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-attacher
-          image: registry.k8s.io/sig-storage/csi-attacher:v4.2.0
+          image: registry.k8s.io/sig-storage/csi-attacher:v4.3.0
           args:
             - "--csi-address=$(ADDRESS)"
             - "--v=5"
@@ -75,7 +75,7 @@ spec:
         #     - name: socket-dir
         #       mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-resizer
-          image: registry.k8s.io/sig-storage/csi-resizer:v1.7.0
+          image: registry.k8s.io/sig-storage/csi-resizer:v1.8.0
           args:
             - "--csi-address=$(ADDRESS)"
             - "--timeout=30s"

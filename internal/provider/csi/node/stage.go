@@ -17,7 +17,7 @@ import (
 func (n *Node) NodeStageVolume(ctx context.Context, request *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
 	serial := request.PublishContext[n.Driver.Name+"/serial"]
 	dev := request.PublishContext[n.Driver.Name+"/dev"]
-	fstype := request.VolumeContext[n.Driver.Name+"/fstype"]
+	fstype := request.VolumeCapability.AccessType.(*csi.VolumeCapability_Mount).Mount.FsType
 	n.Logger.Info("gonna format/mount (if necessary)", zap.String("serial", serial), zap.String("dev", dev), zap.String("fstype", fstype))
 	diskByIds, err := filepath.Glob("/dev/disk/by-id/*")
 	if err != nil {

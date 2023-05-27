@@ -45,7 +45,6 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	}
 	poolName := request.Parameters["pool"]
 	bus := request.Parameters["bus"]
-	fstype := request.Parameters["csi.storage.k8s.io/fstype"]
 	unlock := c.Driver.DiskLock(poolName, request.Name)
 	defer unlock()
 
@@ -91,7 +90,6 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 				c.Driver.Name + "/pool":   vol.Pool,
 				c.Driver.Name + "/bus":    bus,
 				c.Driver.Name + "/serial": serial,
-				c.Driver.Name + "/fstype": fstype,
 				c.Driver.Name + "/zone":   zone,
 			},
 			AccessibleTopology: toppology,
