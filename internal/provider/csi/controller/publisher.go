@@ -96,7 +96,7 @@ func (c *Controller) genDiskTargetSuffix(domainXml, prefix string) (string, erro
 		}
 	}
 	dev := ""
-	for i := 0; dev == ""; i++ {
+	for i := 1; dev == ""; i++ {
 		dev = fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(i))
 		for _, existingDev := range targetDevs {
 			if existingDev == dev {
