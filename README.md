@@ -15,7 +15,7 @@ metadata:
   name: storage-libvirt-xfs-retain
 provisioner: lu.lxc.csi.libvirt
 parameters:
-  fstype: xfs
+  csi.storage.k8s.io/fstype: xfs
   pool: pool
   bus: virtio # virtio/usb/sata/ide
 reclaimPolicy: Retain

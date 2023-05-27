@@ -99,6 +99,9 @@ func (c *Controller) ControllerGetVolume(ctx context.Context, request *csi.Contr
 	if err != nil {
 		return nil, status.Error(codes.NotFound, fmt.Sprintf("unable to get libvirt instance: %s, %s", zone, err.Error()))
 	}
+	if zone != "" {
+		response.Volume.AccessibleTopology = []*csi.Topology{{Segments: map[string]string{c.Driver.Name + "/zone": zone}}}
+	}
 	pool, err := lv.StoragePoolLookupByName(poolName)
 	if err != nil {
 		response.Status.VolumeCondition = &csi.VolumeCondition{Abnormal: true, Message: fmt.Sprintf("Pool %s not found or with error (%s)", poolName, err.Error())}

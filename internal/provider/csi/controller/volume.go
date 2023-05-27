@@ -33,17 +33,19 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	if violations := validateCapabilities(request.VolumeCapabilities); len(violations) > 0 {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
+	toppology := []*csi.Topology{}
 	zone := ""
-	if request.AccessibilityRequirements.Preferred != nil {
+	if request.AccessibilityRequirements != nil && request.AccessibilityRequirements.Preferred != nil {
 		for _, topology := range request.AccessibilityRequirements.Preferred {
 			if zoneSegment, ok := topology.Segments[c.Driver.Name+"/zone"]; ok && zoneSegment != "" {
 				zone = zoneSegment
+				toppology = request.AccessibilityRequirements.Preferred
 			}
 		}
 	}
 	poolName := request.Parameters["pool"]
 	bus := request.Parameters["bus"]
-	fstype := request.Parameters["fstype"]
+	fstype := request.Parameters["csi.storage.k8s.io/fstype"]
 	unlock := c.Driver.DiskLock(poolName, request.Name)
 	defer unlock()
 
@@ -92,6 +94,7 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 				c.Driver.Name + "/fstype": fstype,
 				c.Driver.Name + "/zone":   zone,
 			},
+			AccessibleTopology: toppology,
 		},
 	}, nil
 }
