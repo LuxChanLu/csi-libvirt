@@ -131,7 +131,7 @@ func (d *Driver) DettachDisk(domainXml, serial string) error {
 		if err != nil {
 			return err
 		}
-		return d.Libvirt.DomainDetachDeviceAlias(domain, disk.FindElement("//alias").SelectAttrValue("name", ""), 0)
+		return d.Libvirt.DomainDetachDeviceAlias(domain, disk.FindElement("alias").SelectAttrValue("name", ""), 0)
 	}
 	return nil
 }

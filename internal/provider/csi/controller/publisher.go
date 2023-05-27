@@ -87,10 +87,9 @@ func (c *Controller) genDiskTargetSuffix(domainXml, prefix string) (string, erro
 	targetDevs := []string{}
 	actualDisks := domainDoc.FindElements("//domain/devices/disk")
 	for _, actualDisk := range actualDisks {
-		target := actualDisk.FindElement("//target")
+		target := actualDisk.FindElement("target")
 		if target != nil {
 			dev := target.SelectAttrValue("dev", "")
-			c.Logger.Info("test", zap.String("dev", dev))
 			if dev != "" {
 				targetDevs = append(targetDevs, dev)
 			}
@@ -99,9 +98,7 @@ func (c *Controller) genDiskTargetSuffix(domainXml, prefix string) (string, erro
 	dev := ""
 	for i := 1; dev == ""; i++ {
 		dev = fmt.Sprintf("%s%s", prefix, c.Driver.EncodeNumberToAlphabet(i))
-		c.Logger.Info("test2", zap.String("dev", dev))
 		for _, existingDev := range targetDevs {
-			c.Logger.Info("test3", zap.String("dev", existingDev))
 			if existingDev == dev {
 				dev = ""
 				break
