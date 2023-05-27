@@ -80,13 +80,15 @@ func buildDialers(log *zap.Logger, config *config.Config) []*ZonedDialer {
 		}
 		return &ZonedDialer{Dialer: dialer}
 	}
-	dialers := make([]*ZonedDialer, len(config.Zone.Zones)+1)
-	dialers[0] = buildDialer(config.LibvirtEndpoint)
-	for idx, zone := range config.Zone.Zones {
-		dialers[idx+1] = buildDialer(zone.LibvirtEndpoint)
-		dialers[idx+1].Zone = zone.Name
+	if len(config.Zone.Zones) > 0 {
+		dialers := make([]*ZonedDialer, len(config.Zone.Zones))
+		for idx, zone := range config.Zone.Zones {
+			dialers[idx] = buildDialer(zone.LibvirtEndpoint)
+			dialers[idx].Zone = zone.Name
+		}
+		return dialers
 	}
-	return dialers
+	return []*ZonedDialer{{Dialer: buildDialer(config.LibvirtEndpoint)}}
 }
 
 func (h *Hypervisors) Zone(zone string) (*libvirt.Libvirt, error) {
