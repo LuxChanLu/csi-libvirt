@@ -90,7 +90,7 @@ func (d *Driver) DiskAttachedToNodes(ctx context.Context, file string) ([]string
 	return nodeIds, nil
 }
 
-func (d *Driver) AttachDisk(domain libvirt.Domain, domainXml, disk, serial string) error {
+func (d *Driver) AttachDisk(domainXml, disk, serial string) error {
 	domainDoc := etree.NewDocument()
 	if err := domainDoc.ReadFromString(domainXml); err != nil {
 		return err
@@ -106,13 +106,14 @@ func (d *Driver) AttachDisk(domain libvirt.Domain, domainXml, disk, serial strin
 		if err != nil {
 			return err
 		}
+		d.logger.Info(newDomainXml)
 		_, err = d.Libvirt.DomainDefineXML(newDomainXml)
 		return err
 	}
 	return nil
 }
 
-func (d *Driver) DettachDisk(domain libvirt.Domain, domainXml, serial string) error {
+func (d *Driver) DettachDisk(domainXml, serial string) error {
 	domainDoc := etree.NewDocument()
 	if err := domainDoc.ReadFromString(domainXml); err != nil {
 		return err
@@ -124,6 +125,7 @@ func (d *Driver) DettachDisk(domain libvirt.Domain, domainXml, serial string) er
 		if err != nil {
 			return err
 		}
+		d.logger.Info(newDomainXml)
 		_, err = d.Libvirt.DomainDefineXML(newDomainXml)
 		return err
 	}
