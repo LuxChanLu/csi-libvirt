@@ -34,7 +34,7 @@ type provideLibvirtParams struct {
 	Dialers []*ZonedDialer `group:"libvirt.dialers"`
 }
 
-func ProvideLibvirt(lc fx.Lifecycle, params *provideLibvirtParams) *Hypervisors {
+func ProvideLibvirt(lc fx.Lifecycle, params provideLibvirtParams) *Hypervisors {
 	virts := make([]*ZonedHypervisor, len(params.Dialers))
 	for idx, dialer := range params.Dialers {
 		virts[idx] = &ZonedHypervisor{Libvirt: libvirt.NewWithDialer(dialer), Zone: dialer.Zone}
