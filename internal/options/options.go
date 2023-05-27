@@ -13,7 +13,6 @@ import (
 func AppOptions(opts ...fx.Option) []fx.Option {
 	return append([]fx.Option{
 		fx.Provide(provider.ProvideLogger),
-		fx.Provide(hypervisor.ProvideLibvirtDialer),
 		fx.Provide(hypervisor.ProvideLibvirt),
 		fx.Provide(config.ProvideConfig),
 		fx.Provide(provider.ProvideGRPCServer),

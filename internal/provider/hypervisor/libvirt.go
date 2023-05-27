@@ -27,19 +27,14 @@ type ZonedDialer struct {
 	Zone string
 }
 
-type provideLibvirtParams struct {
-	fx.In
-
-	Log     *zap.Logger
-	Dialers []*ZonedDialer `group:"libvirt.dialers"`
-}
-
-func ProvideLibvirt(lc fx.Lifecycle, params provideLibvirtParams) *Hypervisors {
-	virts := make([]*ZonedHypervisor, len(params.Dialers))
-	for idx, dialer := range params.Dialers {
+func ProvideLibvirt(lc fx.Lifecycle, log *zap.Logger, config *config.Config) *Hypervisors {
+	dialers := buildDialers(log, config)
+	virts := make([]*ZonedHypervisor, len(dialers))
+	for idx, dialer := range dialers {
 		virts[idx] = &ZonedHypervisor{Libvirt: libvirt.NewWithDialer(dialer), Zone: dialer.Zone}
 	}
 	lc.Append(fx.StartStopHook(func() error {
+		log.Info("connection to hypervisors", zap.Int("count", len(virts)))
 		for _, virt := range virts {
 			if err := virt.Connect(); err != nil {
 				return err
@@ -48,7 +43,7 @@ func ProvideLibvirt(lc fx.Lifecycle, params provideLibvirtParams) *Hypervisors {
 			if err != nil {
 				return err
 			}
-			params.Log.Info("libvirt connected", zap.Uint64("version", version))
+			log.Info("libvirt connected", zap.Uint64("version", version))
 		}
 		return nil
 	}, func() error {
@@ -59,16 +54,10 @@ func ProvideLibvirt(lc fx.Lifecycle, params provideLibvirtParams) *Hypervisors {
 		}
 		return nil
 	}))
-	return &Hypervisors{Libvirts: virts, Logger: params.Log.With(zap.String("tier", "hypervisor"))}
+	return &Hypervisors{Libvirts: virts, Logger: log.With(zap.String("tier", "hypervisor"))}
 }
 
-type provideLibvirtDialerOutput struct {
-	fx.Out
-
-	Dialers []*ZonedDialer `group:"libvirt.dialers"`
-}
-
-func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) provideLibvirtDialerOutput {
+func buildDialers(log *zap.Logger, config *config.Config) []*ZonedDialer {
 	buildDialer := func(uri string) *ZonedDialer {
 		endpoint, err := url.Parse(uri)
 		if err != nil {
@@ -97,7 +86,7 @@ func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) provideLibvirt
 		dialers[idx+1] = buildDialer(zone.LibvirtEndpoint)
 		dialers[idx+1].Zone = zone.Name
 	}
-	return provideLibvirtDialerOutput{Dialers: dialers}
+	return dialers
 }
 
 func (h *Hypervisors) Zone(zone string) (*libvirt.Libvirt, error) {
