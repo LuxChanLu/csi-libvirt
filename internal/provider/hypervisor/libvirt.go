@@ -62,7 +62,13 @@ func ProvideLibvirt(lc fx.Lifecycle, params provideLibvirtParams) *Hypervisors {
 	return &Hypervisors{Libvirts: virts, Logger: params.Log.With(zap.String("tier", "hypervisor"))}
 }
 
-func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) []*ZonedDialer {
+type provideLibvirtDialerOutput struct {
+	fx.Out
+
+	Dialers []*ZonedDialer `group:"libvirt.dialers"`
+}
+
+func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) provideLibvirtDialerOutput {
 	buildDialer := func(uri string) *ZonedDialer {
 		endpoint, err := url.Parse(uri)
 		if err != nil {
@@ -91,7 +97,7 @@ func ProvideLibvirtDialer(log *zap.Logger, config *config.Config) []*ZonedDialer
 		dialers[idx+1] = buildDialer(zone.LibvirtEndpoint)
 		dialers[idx+1].Zone = zone.Name
 	}
-	return dialers
+	return provideLibvirtDialerOutput{Dialers: dialers}
 }
 
 func (h *Hypervisors) Zone(zone string) (*libvirt.Libvirt, error) {
