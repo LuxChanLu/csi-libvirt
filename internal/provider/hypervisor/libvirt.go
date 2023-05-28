@@ -86,9 +86,6 @@ func buildDialers(log *zap.Logger, config *config.Config) []*ZonedDialer {
 			dialers[idx] = buildDialer(zone.LibvirtEndpoint)
 			dialers[idx].Zone = zone.Name
 		}
-		if len(config.LibvirtEndpoint) > 0 {
-			dialers = append(dialers, buildDialer(config.LibvirtEndpoint))
-		}
 		return dialers
 	}
 	return []*ZonedDialer{{Dialer: buildDialer(config.LibvirtEndpoint)}}
