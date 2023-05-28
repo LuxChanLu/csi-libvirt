@@ -40,7 +40,7 @@ func (c *Controller) ListVolumes(ctx context.Context, request *csi.ListVolumesRe
 			}
 			allHypervisorsDisks[hyperisorIdx][idx] = make([]*csi.ListVolumesResponse_Entry, len(vols))
 			for idxVol, vol := range vols {
-				volume, err := c.ControllerGetVolume(context.Background(), &csi.ControllerGetVolumeRequest{VolumeId: buildVolId(vol.Pool, vol.Name, vol.Key, "", "")})
+				volume, err := c.ControllerGetVolume(context.Background(), &csi.ControllerGetVolumeRequest{VolumeId: buildVolId(vol.Pool, vol.Name, vol.Key, "", lv.Zone)})
 				if err != nil {
 					return nil, err
 				}

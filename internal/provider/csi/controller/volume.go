@@ -146,7 +146,7 @@ func validateCapabilities(caps []*csi.VolumeCapability) []string {
 }
 
 func buildVolId(pool, name, key, serial, zone string) string {
-	return strings.Join([]string{pool, name, key, serial}, ":")
+	return strings.Join([]string{pool, name, key, serial, zone}, ":")
 }
 
 func extratVolId(volId string) (pool, name, key, serial, zone string) {
