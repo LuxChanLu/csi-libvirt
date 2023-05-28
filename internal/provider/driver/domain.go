@@ -10,7 +10,6 @@ import (
 	"github.com/beevik/etree"
 	"github.com/digitalocean/go-libvirt"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 )
 
 type Disk struct {
@@ -58,26 +57,19 @@ func (d *Driver) DiskAttachedToNodes(ctx context.Context, lv *libvirt.Libvirt, f
 		d.Logger.Warn("unable to list domains", zap.Error(err))
 		return nil, err
 	}
-	g, _ := errgroup.WithContext(ctx)
 	allDisks := map[string][]Disk{}
 	for _, domain := range domains {
-		domain := domain
-		g.Go(func() error {
-			xml, err := lv.DomainGetXMLDesc(domain, 0)
-			if err != nil {
-				return err
-			}
-			disks, err := d.LookupDomainDisks(xml)
-			if err != nil {
-				return err
-			}
-			allDisks[hex.EncodeToString(domain.UUID[:])] = disks
-			return nil
-		})
-	}
-	if err := g.Wait(); err != nil {
-		d.Logger.Warn("unable to list domains disks", zap.Error(err))
-		return nil, err
+		xml, err := lv.DomainGetXMLDesc(domain, 0)
+		if err != nil {
+			d.Logger.Warn("unable to get domain xml", zap.Error(err))
+			return nil, err
+		}
+		disks, err := d.LookupDomainDisks(xml)
+		if err != nil {
+			d.Logger.Warn("unable to get domain disks", zap.Error(err))
+			return nil, err
+		}
+		allDisks[hex.EncodeToString(domain.UUID[:])] = disks
 	}
 	nodeIds := []string{}
 	for domainUUID, disks := range allDisks {
