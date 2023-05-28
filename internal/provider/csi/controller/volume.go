@@ -33,13 +33,14 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 	if violations := validateCapabilities(request.VolumeCapabilities); len(violations) > 0 {
 		return nil, status.Error(codes.InvalidArgument, fmt.Sprintf("volume capabilities cannot be satisified: %s", strings.Join(violations, "; ")))
 	}
-	toppology := []*csi.Topology{}
+	volumeTopology := []*csi.Topology{}
 	zone := ""
 	if request.AccessibilityRequirements != nil && request.AccessibilityRequirements.Preferred != nil {
 		for _, topology := range request.AccessibilityRequirements.Preferred {
 			if zoneSegment, ok := topology.Segments[c.Driver.Name+"/zone"]; ok && zoneSegment != "" {
 				zone = zoneSegment
-				toppology = request.AccessibilityRequirements.Preferred
+				volumeTopology = []*csi.Topology{{Segments: map[string]string{c.Driver.Name + "/zone": zone}}}
+				break
 			}
 		}
 	}
@@ -92,7 +93,7 @@ func (c *Controller) CreateVolume(ctx context.Context, request *csi.CreateVolume
 				c.Driver.Name + "/serial": serial,
 				c.Driver.Name + "/zone":   zone,
 			},
-			AccessibleTopology: toppology,
+			AccessibleTopology: volumeTopology,
 		},
 	}, nil
 }
