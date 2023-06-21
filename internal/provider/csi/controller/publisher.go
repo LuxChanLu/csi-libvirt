@@ -74,14 +74,18 @@ func (c *Controller) ControllerUnpublishVolume(ctx context.Context, request *csi
 	c.Logger.Info("volume gonna be unpublished", zap.String("nodeId", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key))
 	domain, err := lv.DomainLookupByUUID(nodeUuid)
 	if err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
+		c.Logger.Warn("unable to get domain", zap.String("domain", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key), zap.Error(err))
+		return &csi.ControllerUnpublishVolumeResponse{}, nil
 	}
 	domainXml, err := lv.DomainGetXMLDesc(domain, 0)
 	if err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to get domain: %s", err.Error()))
+		c.Logger.Warn("unable to get domain", zap.String("domain", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key), zap.Error(err))
+		return &csi.ControllerUnpublishVolumeResponse{}, nil
 	}
+	// TODO: check domain attached ?
 	if err := c.Driver.DettachDisk(lv, domainXml, serial); err != nil {
-		return nil, status.Error(codes.Unknown, fmt.Sprintf("unable to dettached disk to domain: %s", err.Error()))
+		c.Logger.Warn("unable to dettached disk to domain", zap.String("domain", request.NodeId), zap.String("pool", poolName), zap.String("name", name), zap.String("key", key), zap.Error(err))
+		return &csi.ControllerUnpublishVolumeResponse{}, nil
 	}
 	c.Logger.Info("volume dettached from domain", zap.String("nodeId", request.NodeId), zap.String("volId", request.VolumeId), zap.String("domain", domain.Name))
 	return &csi.ControllerUnpublishVolumeResponse{}, nil
